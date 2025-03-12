@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generador de Códigos QR</title>
+</head>
+<body>
+    <h1>Generador de Códigos QR</h1>
+    <form id="qrForm">
+        <label for="valor">Valor ($):</label>
+        <input type="number" id="valor" placeholder="Ej: 100" required><br><br>
+
+        <label for="fechaCaducidad">Fecha de Caducidad:</label>
+        <input type="date" id="fechaCaducidad" placeholder="YYYY-MM-DD" required><br><br>
+
+        <label for="estado">Estado del QR:</label>
+        <select id="estado">
+            <option value="activo">activo</option>
+            <option value="inactivo">inactivo</option>
+        </select><br><br>
+
+        <label for="cantidad">Cantidad de Códigos QR:</label>
+        <input type="number" id="cantidad" value="1" min="1" placeholder="Ej: 5"><br><br>
+
+        <label for="filenamePrefix">Nombre de archivo:</label>
+        <input type="text" id="filenamePrefix" placeholder="Prefijo del archivo (ej: QR_)" value="QR_"><br><br>
+
+        <button type="button" onclick="generarQR()">Generar Códigos QR</button>
+    </form>
+    <div id="qrCodes"></div>
+    
+    <h2>Información del Código QR</h2>
+    <label for="mostrarUUID">UUID:</label>
+    <input type="text" id="mostrarUUID" readonly><br><br>
+    <button onclick="obtenerInformacion()">Obtener Información</button>
+    <div id="informacionQR"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script>
+        async function generarQR() {
+            const valor = document.getElementById("valor").value;
+            const fechaCaducidad = document.getElementById("fechaCaducidad").value;
+            const estado = document.getElementById("estado").value;
+            const cantidad = parseInt(document.getElementById("cantidad").value);
+            const filenamePrefix = document.getElementById("filenamePrefix").value;
+
+            const qrCodesDiv = document.getElementById("qrCodes");
+            qrCodesDiv.innerHTML = "";
+
+            for (let i = 0; i < cantidad; i++) {
+                const fechaActual = new Date();
+                const anio = fechaActual.getFullYear();
+                const mes = String(fechaActual.getMonth() + 1).padStart(2, '0');
+                const dia = String(fechaActual.getDate()).padStart(2, '0');
+                const fechaCreacion = `${anio}-${mes}-${dia}`;
+
+                const uuid = generarUUID();
+                document.getElementById('mostrarUUID').value = uuid; // Mostrar UUID
+
+                // Enviar datos a la API Python
+                try {
+                    const response = await fetch('http://localhost:3000/api/qrdata', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ uuid, valor, fecha_creacion: fechaCreacion, fecha_caducidad: fechaCaducidad, estado })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    console.log('Data sent to API successfully');
+                } catch (error) {
+                    console.error('Error sending data to API:', error);
+                }
+
+                const qrCode = new QRCode(document.createElement("div"), {
+                    text: uuid,
+                    width: 128,
+                    height: 128,
+                });
+                qrCodesDiv.appendChild(qrCode._el);
+
+                const canvas = qrCode._el.querySelector("canvas");
+                canvas.toBlob(function (blob) {
+                    saveAs(blob, `${filenamePrefix}${i + 1}.png`);
+                });
+            }
+        }
+
+        function generarUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        async function obtenerInformacion() {
+            const uuid = document.getElementById('mostrarUUID').value;
+            try {
+                const response = await fetch(`http://localhost:3000/api/qrdata/${uuid}`);
+
+                if (response.status === 404) {
+                    document.getElementById('informacionQR').textContent = 'UUID no encontrado.';
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                document.getElementById('informacionQR').textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                document.getElementById('informacionQR').textContent = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
