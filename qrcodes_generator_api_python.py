@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import Flask, request, jsonify
 import mysql.connector
 from flask_cors import CORS
@@ -126,5 +127,44 @@ def get_all_qr_data():
         qr_codes.append(qr_data)
     logging.info(f"Datos de QRs obtenidos. Página: {page}, Registros por página: {per_page}")
     return jsonify(qr_codes), 200
+
+@app.route('/api/qrdata/canjear/<short_id>', methods=['PUT'])
+def canjear_qr(short_id):
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error al conectar a la base de datos'}), 500
+
+    cursor = connection.cursor()
+
+    # Verificar el estado y el valor del QR
+    check_query = 'SELECT state, value FROM qr_codes WHERE short_id = %s'
+    cursor.execute(check_query, (short_id,))
+    result = cursor.fetchone()
+
+    if result:
+        estado, valor = result
+        if estado == 'valido' and valor > 0.05:
+            # Actualizar el QR
+            update_query = 'UPDATE qr_codes SET state = "usado", value = 0, used_date = %s WHERE short_id = %s'
+            used_date = datetime.now()
+            try:
+                cursor.execute(update_query, (used_date, short_id))
+                connection.commit()
+                connection.close()
+                logging.info(f"QR {short_id} canjeado correctamente.")
+                return jsonify({'message': f"QR {short_id} canjeado correctamente."}), 200
+            except mysql.connector.Error as err:
+                connection.close()
+                logging.error(f"Error al canjear el QR {short_id}: {err}")
+                return jsonify({'error': f"Error al canjear el QR {short_id}: {err}"}), 500
+        else:
+            connection.close()
+            logging.warning(f"QR {short_id} no cumple con los requisitos para ser canjeado.")
+            return jsonify({'error': f"QR {short_id} no cumple con los requisitos para ser canjeado."}), 400
+    else:
+        connection.close()
+        logging.warning(f"QR {short_id} no encontrado.")
+        return jsonify({'error': f"QR {short_id} no encontrado."}), 404
+    
 if __name__ == '__main__':
     app.run(debug=True, port=3000)
