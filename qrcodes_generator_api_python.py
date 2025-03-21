@@ -15,9 +15,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Configuración de la base de datos desde variables de entorno
 db_config = {
     'host': os.environ.get('DB_HOST', 'localhost'),
-    'user': os.environ.get('DB_USER', 'x'),
-    'password': os.environ.get('DB_PASSWORD', 'xx'),
-    'database': os.environ.get('DB_NAME', 'x')
+    'user': os.environ.get('DB_USER', 'gilo'),
+    'password': os.environ.get('DB_PASSWORD', 'adminadmin'),
+    'database': os.environ.get('DB_NAME', 'waterplus_short_id')
 }
 
 def get_db_connection():
@@ -90,14 +90,41 @@ def get_qr_data(short_id):
             'valor': float(result[1]),
             'estado': result[2],
             'fecha_creacion': str(result[3]),
-            'fecha_usado': str(result[4]) if result[4] else None, #agrega el valor de la fecha usada.
+            'fecha_usado': str(result[4]) if result[4] else None,
         }
         logging.info(f"Datos obtenidos del QR: {qr_data}")
-
         return jsonify(qr_data), 200
     else:
         logging.warning(f"Datos no encontrados para short_id: {short_id}")
         return jsonify({'error': 'Datos no encontrados'}), 404
 
+@app.route('/api/qrcodes', methods=['GET'])
+def get_all_qr_data():
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+
+    connection = get_db_connection()
+    if not connection:
+        return jsonify({'error': 'Error al conectar a la base de datos'}), 500
+
+    cursor = connection.cursor()
+    offset = (page - 1) * per_page
+    query = 'SELECT * FROM qr_codes LIMIT %s OFFSET %s'
+    cursor.execute(query, (per_page, offset))
+    results = cursor.fetchall()
+    connection.close()
+
+    qr_codes = []
+    for result in results:
+        qr_data = {
+            'short_id': result[0],
+            'valor': float(result[1]),
+            'estado': result[2],
+            'fecha_creacion': str(result[3]),
+            'fecha_usado': str(result[4]) if result[4] else None,
+        }
+        qr_codes.append(qr_data)
+    logging.info(f"Datos de QRs obtenidos. Página: {page}, Registros por página: {per_page}")
+    return jsonify(qr_codes), 200
 if __name__ == '__main__':
     app.run(debug=True, port=3000)
