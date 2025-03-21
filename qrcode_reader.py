@@ -26,7 +26,7 @@ def leer_qr():
             datos = codigo.data.decode('utf-8')  # Decodifica los datos del código QR
             print("Código QR detectado:", datos)
 
-            # Intenta hacer una petición GET a la API con el UUID del QR
+            # Intenta hacer una petición GET a la API con el ID del QR
             try:
                 url_api = f"http://localhost:3000/api/qrdata/{datos}"
                 respuesta = requests.get(url_api)
