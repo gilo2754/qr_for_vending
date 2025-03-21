@@ -15,9 +15,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Configuración de la base de datos desde variables de entorno
 db_config = {
     'host': os.environ.get('DB_HOST', 'localhost'),
-    'user': os.environ.get('DB_USER', 'xx'),
+    'user': os.environ.get('DB_USER', 'x'),
     'password': os.environ.get('DB_PASSWORD', 'xx'),
-    'database': os.environ.get('DB_NAME', 'xx')
+    'database': os.environ.get('DB_NAME', 'x')
 }
 
 def get_db_connection():
