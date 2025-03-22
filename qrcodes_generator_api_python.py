@@ -102,7 +102,7 @@ def get_qr_data(short_id):
 @app.route('/api/qrcodes', methods=['GET'])
 def get_all_qr_data():
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
 
     connection = get_db_connection()
     if not connection:
