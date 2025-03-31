@@ -1,8 +1,8 @@
 -- Crear la base de datos waterplus_short_id (si no existe)
-CREATE DATABASE IF NOT EXISTS waterplus_short_id;
+CREATE DATABASE IF NOT EXISTS waterDB;
 
 -- Usar la base de datos waterplus_short_id
-USE waterplus_short_id;
+USE waterDB;
 
 -- Crear la tabla qr_codes (si no existe)
 CREATE TABLE IF NOT EXISTS qr_codes (
