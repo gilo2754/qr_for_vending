@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.txt
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_USER=gilo
+      - DB_PASSWORD=adminadmin
+      - DB_NAME=waterDB
+      - API_HOST=0.0.0.0
+      - API_PORT=3000
+      - DEBUG=True
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+    networks:
+      - qr-network
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=waterDB
+      - MYSQL_USER=gilo
+      - MYSQL_PASSWORD=adminadmin
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./create_database_schema.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - qr-network
+
+volumes:
+  mysql_data:
+
+networks:
+  qr-network:
+    driver: bridge 

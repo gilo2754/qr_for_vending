@@ -1,53 +1,54 @@
-# QR Code Vending System
+# QR Code Generator API
 
-System for managing QR codes in vending machines, consisting of two main components:
+API for generating and managing QR codes for vending machines.
 
-1. **Generator**: REST API for generating and managing QR codes
-2. **Reader**: Application for reading and processing QR codes from a USB scanner
+## Prerequisites
 
-## Project Structure
+- Docker
+- Docker Compose
 
+## Running with Docker
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd qr_for_vending
 ```
-qr_for_vending/
-├── qrcodes_generator_api_python.py  # REST API for QR generation
-├── qrcode_reader.py                # QR code reader
-├── requirements.txt                # Dependencies
+
+2. Create a `.env` file from the example and configure your environment variables:
+```bash
+cp .env.example .env
+```
+Edit the `.env` file with your specific configuration values.
+
+3. Build and start the containers:
+```bash
+docker-compose up --build
 ```
 
-## Requirements
+The API will be available at http://localhost:3000
 
-- Python 3.7+
-- MySQL Server
-- USB QR code scanner
-- Dependencies listed in requirements.txt
+## API Documentation
 
-## Setup
+Once the server is running, you can access:
+- Swagger UI: http://localhost:3000/docs
+- ReDoc: http://localhost:3000/redoc
 
-1. Create a `.env` file in the project root:
-```env
-# API Configuration
-API_URL=http://localhost:3000
-API_HOST=0.0.0.0
-API_PORT=3000
-DEBUG=True
+## API Endpoints
 
-# Database Configuration
-DB_HOST=localhost
-DB_USER=your_user
-DB_PASSWORD=your_password
-DB_NAME=your_database
+- POST `/api/qrdata` - Create a new QR code
+- GET `/api/qrdata/{qrcode_id}` - Get QR code information
+- GET `/api/qrcodes` - List all QR codes (with pagination)
+- PUT `/api/qrdata/exchange/{qrcode_id}` - Exchange a QR code
 
-# QR Code Configuration
-QR_MIN_VALUE=0.05
-QR_SHORT_ID_LENGTH=8
+## Development
 
-# Security Configuration
-CORS_ORIGINS=*
-RATE_LIMIT=100
-RATE_LIMIT_PERIOD=1
+To run the application in development mode:
 
-# Logging Configuration
-LOG_LEVEL=INFO
+1. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
 2. Install dependencies:
@@ -55,21 +56,42 @@ LOG_LEVEL=INFO
 pip install -r requirements.txt
 ```
 
-## Usage
-
-### Start the API
+3. Set up the database:
 ```bash
-python qrcodes_generator_api_python.py
+mysql -u <your_user> -p < create_database_schema.sql
 ```
 
-### Start the Reader
+4. Run the application:
 ```bash
-python qrcode_reader.py
+python qrcode_generator.py
 ```
 
-## API Endpoints
+## Environment Variables
 
-- `POST /api/qrdata`: Create a new QR code
-- `GET /api/qrdata/<short_id>`: Get QR code information
-- `GET /api/qrcodes`: List all QR codes
-- `PUT /api/qrdata/canjear/<short_id>`: Redeem a QR code 
+The following environment variables must be configured in your `.env` file:
+
+### API Configuration
+- `API_URL` - API base URL
+- `API_HOST` - API host address
+- `API_PORT` - API port number
+- `DEBUG` - Debug mode flag
+
+### Database Configuration
+- `DB_HOST` - Database host address
+- `DB_USER` - Database username
+- `DB_PASSWORD` - Database password
+- `DB_NAME` - Database name
+
+### QR Code Configuration
+- `QR_MIN_VALUE` - Minimum QR code value
+- `QR_SHORT_ID_LENGTH` - Length of QR code ID
+
+### Security Configuration
+- `CORS_ORIGINS` - Allowed CORS origins
+- `RATE_LIMIT` - API rate limit
+- `RATE_LIMIT_PERIOD` - Rate limit period in minutes
+
+### Logging Configuration
+- `LOG_LEVEL` - Logging level (INFO, DEBUG, etc.)
+
+See `.env.example` for the structure of the environment variables file. 

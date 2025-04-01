@@ -34,5 +34,10 @@ ENV/
 *.swp
 *.swo
 
+# Docker
+.docker/
+docker-compose.override.yml
+
 # Logs
-*.log 
+*.log
+logs/ 
