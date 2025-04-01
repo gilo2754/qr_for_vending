@@ -5,31 +5,26 @@ from flask_cors import CORS
 import random
 import string
 import logging
-import os
+from config import Config
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=Config.CORS_ORIGINS)
 
 # Configuración de Logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-# Configuración de la base de datos desde variables de entorno
-db_config = {
-    'host': os.environ.get('DB_HOST', 'localhost'),
-    'user': os.environ.get('DB_USER', 'gilo'),
-    'password': os.environ.get('DB_PASSWORD', 'adminadmin'),
-    'database': os.environ.get('DB_NAME', 'waterplus_short_id')
-}
+logging.basicConfig(
+    level=getattr(logging, Config.LOG_LEVEL),
+    format=Config.LOG_FORMAT
+)
 
 def get_db_connection():
     try:
-        connection = mysql.connector.connect(**db_config)
+        connection = mysql.connector.connect(**Config.DB_CONFIG)
         return connection
     except mysql.connector.Error as err:
         logging.error(f"Error al conectar a la base de datos: {err}")
         return None
 
-def generate_short_id(length=8):
+def generate_short_id(length=Config.QR_SHORT_ID_LENGTH):
     """Genera un ID alfanumérico corto y único."""
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for i in range(length))
@@ -143,7 +138,7 @@ def canjear_qr(short_id):
 
     if result:
         estado, valor = result
-        if estado == 'valido' and valor > 0.05:
+        if estado == 'valido' and valor > Config.QR_MIN_VALUE:
             # Actualizar el QR
             update_query = 'UPDATE qr_codes SET state = "usado", value = 0, used_date = %s WHERE short_id = %s'
             used_date = datetime.now()
@@ -167,4 +162,8 @@ def canjear_qr(short_id):
         return jsonify({'error': f"QR {short_id} no encontrado."}), 404
     
 if __name__ == '__main__':
-    app.run(debug=True, port=3000, host='0.0.0.0')
+    app.run(
+        debug=Config.DEBUG,
+        port=Config.API_PORT,
+        host=Config.API_HOST
+    )
