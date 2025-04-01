@@ -1,17 +1,25 @@
-# Usa una imagen base de Python
+# Use Python 3.12 as base image
 FROM python:3.12
 
-# Establece el directorio de trabajo dentro del contenedor
+# Set working directory
 WORKDIR /app
 
-# Copia los archivos de tu aplicación al contenedor
-COPY . /app
+# Install system dependencies including MySQL client
+RUN apt-get update && apt-get install -y \
+    default-mysql-client \
+    && rm -rf /var/lib/apt/lists/*
 
-# Instala las dependencias
-RUN pip install -r requirements.txt
+# Copy requirements first to leverage Docker cache
+COPY requirements.txt .
 
-# Expone el puerto en el que la aplicación Flask escucha
-EXPOSE 5000
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Define el comando para ejecutar la aplicación
-CMD ["python", "qrcode_reader.py"]
+# Copy the rest of the application
+COPY . .
+
+# Expose the port the app runs on
+EXPOSE 3000
+
+# Command to run the application
+CMD ["python", "qrcode_generator.py"]
