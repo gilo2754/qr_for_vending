@@ -2,67 +2,6 @@
 
 API for generating and managing QR codes for vending machines.
 
-## Hardware Specifications
-
-### ESP32-CAM Module
-The QR code reader is implemented using an ESP32-CAM module with the following specifications:
-- Chip: ESP32-D0WDQ6 (revision v1.0)
-- Features: WiFi, BT, Dual Core, 240MHz, VRef calibration in efuse
-- Crystal: 40MHz
-- Camera: OV2640 camera module
-- Flash: 4MB
-
-This module is used in the `qrcode_reader_esp32` component for capturing and processing QR codes.
-
-### Setup Environment
-
-1. Create a virtual environment (recommended):
-```bash
-python -m venv .venv
-```
-
-2. Activate the virtual environment:
-- On Windows:
-```bash
-.venv\Scripts\activate
-```
-- On Linux/Mac:
-```bash
-source .venv/bin/activate
-```
-
-3. Install MPRemote:
-```bash
-pip install mpremote
-```
-
-### Uploading and Running Files
-To work with the ESP32 using MicroPython, you can use the following commands:
-
-1. Upload files to ESP32 flash memory:
-```bash
-mpremote cp blink_led.py :
-```
-
-2. Run a program on the ESP32:
-```bash
-mpremote run blink_led.py
-```
-
-3. List files on the ESP32 Flash:
-```bash
-mpremote run blink_led.py
-```
-
-Note: Always ensure your virtual environment is activated before running MPRemote commands. You can verify this by checking if your terminal prompt starts with `(.venv)`.
-
-If you can't use `mpremote` directly, you can use:
-```bash
-python -m mpremote cp blink_led.py :
-python -m mpremote run blink_led.py
-```
-```
-
 ## Prerequisites
 
 - Docker
@@ -155,4 +94,8 @@ The following environment variables must be configured in your `.env` file:
 ### Logging Configuration
 - `LOG_LEVEL` - Logging level (INFO, DEBUG, etc.)
 
-See `.env.example` for the structure of the environment variables file. 
+See `.env.example` for the structure of the environment variables file.
+
+## ESP32 Integration
+
+For ESP32-CAM setup and usage instructions, please refer to [ESP32_README.md](ESP32_README.md). 
