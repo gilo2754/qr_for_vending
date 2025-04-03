@@ -71,7 +71,11 @@
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ valor, fecha_creacion: fechaCreacion, estado })
+                        body: JSON.stringify({ 
+                            value: parseFloat(valor), 
+                            creation_date: fechaCreacion + "T00:00:00.000Z", 
+                            state: estado 
+                        })
                     });
 
                     if (!response.ok) {
