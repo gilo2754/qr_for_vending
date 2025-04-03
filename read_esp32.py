@@ -17,17 +17,12 @@ def list_com_ports():
     for port in ports:
         print(f"- {port.device}: {port.description}")
 
-def flash_esp32(port='COM4', baud_rate=115200, firmware_path='firmware/esp32-firmware.bin'):
+def read_esp32(port='COM4', baud_rate=115200):
     """
-    Flash firmware to ESP32 using esptool
+    Read ESP32 flash memory contents
     """
     try:
-        # Check if firmware file exists
-        if not os.path.exists(firmware_path):
-            print(f"Error: Firmware file not found at {firmware_path}")
-            return False
-
-        print(f"Flashing firmware from {firmware_path} to ESP32 on {port}")
+        print(f"Reading ESP32 flash memory on {port}")
         print("Please make sure your ESP32 is in bootloader mode")
         print("Hold the BOOT button and press RESET, then release BOOT")
         
@@ -37,15 +32,21 @@ def flash_esp32(port='COM4', baud_rate=115200, firmware_path='firmware/esp32-fir
             '--baud', str(baud_rate),
             '--before', 'default_reset',
             '--after', 'hard_reset',
-            'write_flash',
-            '--flash_mode', 'dio',
-            '--flash_size', '4MB',
-            '--flash_freq', '40m',
-            '0x1000', firmware_path
+            'read_flash',
+            '0x1000',  # Start address
+            '0x1000',  # Size to read (4KB)
+            'firmware_backup.bin'  # Output file
         ]
 
         # Run esptool with arguments
         command = esptool.main(args)
+        
+        if os.path.exists('firmware_backup.bin'):
+            print("\nFlash contents have been saved to 'firmware_backup.bin'")
+            print("This is a backup of the first 4KB of your ESP32's flash memory")
+            print("The file contains the bootloader and partition table")
+        else:
+            print("Error: Failed to create backup file")
         
         return True
 
@@ -59,4 +60,4 @@ if __name__ == "__main__":
     
     # You can specify port as command line argument
     port = sys.argv[1] if len(sys.argv) > 1 else 'COM4'
-    flash_esp32(port=port) 
+    read_esp32(port=port) 
