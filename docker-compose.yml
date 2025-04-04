@@ -8,10 +8,10 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DB_HOST=db
-      - DB_USER=gilo
-      - DB_PASSWORD=adminadmin
-      - DB_NAME=waterDB
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
       - API_HOST=0.0.0.0
       - API_PORT=3000
       - DEBUG=True
@@ -27,19 +27,43 @@ services:
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=rootpassword
-      - MYSQL_DATABASE=waterDB
-      - MYSQL_USER=gilo
-      - MYSQL_PASSWORD=adminadmin
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
       - ./create_database_schema.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - qr-network
 
+  mysql-backup:
+    image: alpine:latest
+    container_name: mysql-backup
+    volumes:
+      - ./backups:/backups
+      - ./scripts:/scripts
+      - ./scripts/crontab:/etc/crontabs/root
+      - mysql_data:/var/lib/mysql:ro
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_ACCESS_TOKEN=${GOOGLE_ACCESS_TOKEN}
+      - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN}
+    entrypoint: ["/bin/sh", "-c", "chmod +x /scripts/backup-mysql.sh && apk add --no-cache mysql-client rclone && crond -f -L /var/log/cron.log"]
+    depends_on:
+      - db
+    networks:
+      - qr-network
+    env_file: .env
+
 volumes:
   mysql_data:
 
 networks:
   qr-network:
-    driver: bridge 
+    driver: bridge

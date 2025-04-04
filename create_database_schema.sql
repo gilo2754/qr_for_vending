@@ -1,7 +1,7 @@
--- Create the database waterplus_short_id (if it doesn't exist)
+-- Create the database if it doesn't exist
 CREATE DATABASE IF NOT EXISTS waterDB;
 
--- Use the database waterplus_short_id
+-- Use the database
 USE waterDB;
 
 -- Create the qr_codes table (if it doesn't exist)
@@ -14,3 +14,7 @@ CREATE TABLE IF NOT EXISTS qr_codes (
 );
 
 select * from qr_codes where qrcode_id="HBeajrUr";
+
+-- Grant privileges to the user
+GRANT ALL PRIVILEGES ON waterDB.* TO 'gilo'@'%';
+FLUSH PRIVILEGES;

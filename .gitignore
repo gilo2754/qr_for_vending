@@ -40,4 +40,9 @@ docker-compose.override.yml
 
 # Logs
 *.log
-logs/ 
+logs/
+
+# Rclone configuration
+rclone.conf
+rclone_config/
+**/rclone.conf 
