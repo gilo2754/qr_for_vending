@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS qr_codes (
     used_date DATETIME
 );
 
-select * from qr_codes where qrcode_id="HBeajrUr";
+-- Insert a test record to verify the table exists
+INSERT INTO qr_codes (qrcode_id, value, state, creation_date) 
+VALUES ('TEST123', 10.00, 'active', CURDATE());
 
 -- Grant privileges to the user
 GRANT ALL PRIVILEGES ON waterDB.* TO 'gilo'@'%';
