@@ -58,7 +58,7 @@ services:
       - db
     networks:
       - qr-network
-    env_file: .env
+    env_file: stack.env
 
 volumes:
   mysql_data:
