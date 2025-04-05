@@ -43,7 +43,6 @@ services:
     volumes:
       - ./backups:/backups
       - ./scripts:/scripts
-      - ./scripts/crontab:/etc/crontabs/root
       - mysql_data:/var/lib/mysql:ro
     environment:
       - DB_HOST=${DB_HOST}
@@ -54,12 +53,12 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_ACCESS_TOKEN=${GOOGLE_ACCESS_TOKEN}
       - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN}
-    entrypoint: ["/bin/sh", "-c", "chmod +x /scripts/backup-mysql.sh && apk add --no-cache mysql-client rclone && crond -f -L /var/log/cron.log"]
+    entrypoint: ["/bin/sh", "-c", "chmod +x /scripts/backup-mysql.sh && apk add --no-cache mysql-client rclone && echo '0 3 * * * /scripts/backup-mysql.sh >> /var/log/cron.log 2>&1' > /etc/crontabs/root && crond -f -L /var/log/cron.log"]
     depends_on:
       - db
     networks:
       - qr-network
-    env_file: stack.env
+    env_file: .env
 
 volumes:
   mysql_data:
