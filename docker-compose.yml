@@ -17,8 +17,6 @@ services:
       - DEBUG=True
     depends_on:
       - db
-    volumes:
-      - .:/app
     networks:
       - qr-network
 
