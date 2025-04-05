@@ -21,7 +21,9 @@ services:
       - qr-network
 
   db:
-    image: mysql:8.0
+    build:
+      context: .
+      dockerfile: Dockerfile.db
     ports:
       - "3306:3306"
     environment:
@@ -31,7 +33,6 @@ services:
       - MYSQL_PASSWORD=${DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./create_database_schema.sql:/docker-entrypoint-initdb.d/01-init.sql
     networks:
       - qr-network
 
