@@ -17,6 +17,7 @@ services:
       - DEBUG=True
     depends_on:
       - db
+    command: sh -c "python qrcode_generator.py"
     networks:
       - qr-network
 
@@ -33,6 +34,7 @@ services:
       - MYSQL_PASSWORD=${DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
     networks:
       - qr-network
 

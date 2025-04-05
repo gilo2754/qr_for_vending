@@ -4,11 +4,6 @@ FROM python:3.12
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies including MySQL client
-RUN apt-get update && apt-get install -y \
-    default-mysql-client \
-    && rm -rf /var/lib/apt/lists/*
-
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
 
