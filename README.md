@@ -6,6 +6,7 @@ API for generating and managing QR codes for vending machines.
 
 - Docker
 - Docker Compose
+- Google Drive account (for backups)
 
 ## Running with Docker
 
@@ -27,6 +28,30 @@ docker-compose up --build
 ```
 
 The API will be available at http://localhost:3000
+
+## Automatic Backups
+
+The application includes an automatic backup system that:
+- Creates daily database backups at 3 AM
+- Compresses backups using gzip
+- Uploads backups to Google Drive
+- Maintains a 7-day retention policy
+- Stores backups in both local storage and Google Drive
+
+### Backup Configuration
+
+The backup system is configured in the `docker-compose.yml` file and uses:
+- A dedicated backup container (`mysql-backup`)
+- Cron for scheduling
+- Rclone for Google Drive integration
+
+### Backup Files
+
+Backups are stored in:
+- Local: `./backups/` directory
+- Google Drive: In the configured folder
+
+Backup files follow the naming convention: `waterDB_YYYYMMDD-HHMM.sql.gz`
 
 ## API Documentation
 
@@ -94,4 +119,14 @@ The following environment variables must be configured in your `.env` file:
 ### Logging Configuration
 - `LOG_LEVEL` - Logging level (INFO, DEBUG, etc.)
 
-See `.env.example` for the structure of the environment variables file. 
+### Backup Configuration
+- `GOOGLE_CLIENT_ID` - Google OAuth client ID
+- `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
+- `GOOGLE_ACCESS_TOKEN` - Google OAuth access token
+- `GOOGLE_REFRESH_TOKEN` - Google OAuth refresh token
+
+See `.env.example` for the structure of the environment variables file.
+
+## ESP32 Integration
+
+For ESP32-CAM setup and usage instructions, please refer to [ESP32_README.md](ESP32_README.md). 
