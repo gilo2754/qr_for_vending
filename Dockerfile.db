@@ -6,11 +6,5 @@ COPY 01-create-database.sql /docker-entrypoint-initdb.d/01-create-database.sql
 # Set permissions
 RUN chmod 644 /docker-entrypoint-initdb.d/01-create-database.sql
 
-# Set environment variables
-ENV MYSQL_DATABASE=waterDB
-ENV MYSQL_USER=gilo
-ENV MYSQL_PASSWORD=gilo123
-ENV MYSQL_ROOT_PASSWORD=root123
-
 # Verify the script exists
 RUN ls -l /docker-entrypoint-initdb.d/ 
