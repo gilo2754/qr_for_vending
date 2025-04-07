@@ -1,8 +1,8 @@
 -- Create the database if it doesn't exist
-CREATE DATABASE IF NOT EXISTS waterDB;
+CREATE DATABASE IF NOT EXISTS waterDB2;
 
 -- Use the database
-USE waterDB;
+USE waterDB2;
 
 -- Create the qr_codes table (if it doesn't exist)
 CREATE TABLE IF NOT EXISTS qr_codes (
