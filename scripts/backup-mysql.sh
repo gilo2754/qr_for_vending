@@ -9,16 +9,17 @@ source /scripts/load-env.sh
 # Create backups directory if it doesn't exist
 mkdir -p /backups
 
-# Generate timestamp for the backup file
-TIMESTAMP=$(date +"%Y%m%d-%H%M")
-BACKUP_FILE="waterDB_${TIMESTAMP}.sql.gz"
-BACKUP_PATH="/backups/${BACKUP_FILE}"
+# Get current timestamp
+TIMESTAMP=$(date +%Y%m%d-%H%M)
+
+# Create backup filename using the database name from environment variable
+BACKUP_FILE="${DB_NAME}_${TIMESTAMP}.sql.gz"
 
 echo "Starting backup process at $(date)"
 
 # Create the backup
 echo "Creating MySQL backup..."
-mysqldump -h "${DB_HOST}" -u "${DB_USER}" -p"${DB_PASSWORD}" "${DB_NAME}" | gzip > "${BACKUP_PATH}"
+mysqldump -h "${DB_HOST}" -u "${DB_USER}" -p"${DB_PASSWORD}" "${DB_NAME}" | gzip > "/backups/${BACKUP_FILE}"
 
 # Check if backup was successful
 if [ $? -eq 0 ]; then
@@ -26,14 +27,14 @@ if [ $? -eq 0 ]; then
     
     # Upload to Google Drive
     echo "Uploading to Google Drive..."
-    rclone copy "${BACKUP_PATH}" remote:backups/
+    rclone copy "/backups/${BACKUP_FILE}" remote:backups/
     
     if [ $? -eq 0 ]; then
         echo "Upload to Google Drive successful"
         
-        # Keep only the latest backup locally
-        echo "Cleaning up old local backups..."
-        ls -t /backups/waterDB_*.sql.gz | tail -n +2 | xargs -r rm
+        # Clean up old backups (keep last 7 days)
+        echo "Cleaning up old backups..."
+        ls -t /backups/${DB_NAME}_*.sql.gz | tail -n +8 | xargs -r rm
         
         echo "Backup process completed successfully at $(date)"
     else

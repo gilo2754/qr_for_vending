@@ -1,8 +1,8 @@
 -- Create the database if it doesn't exist
-CREATE DATABASE IF NOT EXISTS waterDB2;
+CREATE DATABASE IF NOT EXISTS ${MYSQL_DATABASE};
 
 -- Use the database
-USE waterDB2;
+USE ${MYSQL_DATABASE};
 
 -- Create the qr_codes table (if it doesn't exist)
 CREATE TABLE IF NOT EXISTS qr_codes (
@@ -18,5 +18,5 @@ INSERT INTO qr_codes (qrcode_id, value, state, creation_date)
 VALUES ('TEST123', 10.00, 'active', CURDATE());
 
 -- Grant privileges to the user
-GRANT ALL PRIVILEGES ON waterDB2.* TO 'gilo'@'%';
+GRANT ALL PRIVILEGES ON ${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';
 FLUSH PRIVILEGES; 
