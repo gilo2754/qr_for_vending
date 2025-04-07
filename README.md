@@ -83,7 +83,7 @@ pip install -r requirements.txt
 
 3. Set up the database:
 ```bash
-mysql -u <your_user> -p < create_database_schema.sql
+mysql -u <your_user> -p < 01-create-database.sql
 ```
 
 4. Run the application:

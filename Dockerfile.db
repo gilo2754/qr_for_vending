@@ -1,7 +1,7 @@
 FROM mysql:8.0
 
 # Copy the initialization script
-COPY create_database_schema.sql /docker-entrypoint-initdb.d/01-create-database.sql
+COPY 01-create-database.sql /docker-entrypoint-initdb.d/01-create-database.sql
 
 # Set permissions
 RUN chmod 644 /docker-entrypoint-initdb.d/01-create-database.sql

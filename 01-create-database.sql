@@ -19,4 +19,4 @@ VALUES ('TEST123', 10.00, 'active', CURDATE());
 
 -- Grant privileges to the user
 GRANT ALL PRIVILEGES ON waterDB.* TO 'gilo'@'%';
-FLUSH PRIVILEGES;
+FLUSH PRIVILEGES; 
