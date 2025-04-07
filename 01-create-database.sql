@@ -18,5 +18,5 @@ INSERT INTO qr_codes (qrcode_id, value, state, creation_date)
 VALUES ('TEST123', 10.00, 'active', CURDATE());
 
 -- Grant privileges to the user
-GRANT ALL PRIVILEGES ON waterDB.* TO 'gilo'@'%';
+GRANT ALL PRIVILEGES ON waterDB2.* TO 'gilo'@'%';
 FLUSH PRIVILEGES; 
