@@ -34,9 +34,11 @@ services:
       - MYSQL_PASSWORD=${DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./01-create-database.sql:/docker-entrypoint-initdb.d/01-create-database.sql
     command: --default-authentication-plugin=mysql_native_password
     networks:
       - qr-network
+    restart: unless-stopped
 
   mysql-backup:
     image: alpine:latest
@@ -50,20 +52,17 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_ACCESS_TOKEN=${GOOGLE_ACCESS_TOKEN}
-      - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN}
-    entrypoint: ["/bin/sh", "-c", "chmod +x /scripts/backup-mysql.sh && apk add --no-cache mysql-client rclone && echo '0 3 * * * /scripts/backup-mysql.sh >> /var/log/cron.log 2>&1' > /etc/crontabs/root && crond -f -L /var/log/cron.log"]
-    depends_on:
-      - db
+    command: sh -c "while true; do sleep 3600; /scripts/backup.sh; done"
     networks:
       - qr-network
-    env_file: stack.env
-
-volumes:
-  mysql_data:
+    depends_on:
+      - db
 
 networks:
   qr-network:
     driver: bridge
+
+volumes:
+  mysql_data:
+    name: qr_mysql_data
+    driver: local
