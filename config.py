@@ -17,7 +17,7 @@ class Config:
         'host': os.getenv('DB_HOST', 'localhost'),
         'user': os.getenv('DB_USER', 'gilo'),
         'password': os.getenv('DB_PASSWORD', 'adminadmin'),
-        'database': os.getenv('DB_NAME', 'waterplus_short_id')
+        'database': os.getenv('DB_NAME', 'waterDB')
     }
 
     # QR Code Configuration
@@ -26,7 +26,7 @@ class Config:
 
     # Security Configuration
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', '*').split(',')
-    RATE_LIMIT = os.getenv('RATE_LIMIT', '100')
+    RATE_LIMIT = int(os.getenv('RATE_LIMIT', '100'))
     RATE_LIMIT_PERIOD = timedelta(minutes=int(os.getenv('RATE_LIMIT_PERIOD', '1')))
 
     # Logging Configuration

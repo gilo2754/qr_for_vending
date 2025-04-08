@@ -10,12 +10,14 @@ COPY requirements.txt .
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Create static directory
+RUN mkdir -p static
+
+# Copy index.html to static directory
+COPY index.html static/
+
 # Copy the rest of the application
 COPY . .
-
-# Create static directory and ensure index.html is there
-RUN mkdir -p static && \
-    if [ -f index.html ]; then mv index.html static/; fi
 
 # Expose the port the app runs on
 EXPOSE 3000

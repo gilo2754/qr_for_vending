@@ -3,18 +3,22 @@ from typing import List, Optional
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 import mysql.connector
 import random
 import string
 import logging
-from config import Config
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(
-    level=Config.LOG_LEVEL,
-    format=Config.LOG_FORMAT
+    level=os.getenv("LOG_LEVEL", "INFO"),
+    format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
 # Pydantic models for request/response validation
@@ -31,7 +35,7 @@ class QRCode(QRCodeBase):
     used_date: Optional[datetime] = None
 
     class Config:
-        from_attributes = True
+        from_attributes = True  # Updated for Pydantic 2.x
 
 # FastAPI app
 app = FastAPI(
@@ -43,7 +47,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=Config.CORS_ORIGINS,
+    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,13 +59,28 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Serve index.html at root
 @app.get("/")
 async def read_root():
-    return FileResponse("index.html")
+    try:
+        return FileResponse("static/index.html")
+    except Exception as e:
+        logging.error(f"Error serving index.html: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Error loading the application interface"}
+        )
+
+# Database configuration
+DB_CONFIG = {
+    "host": os.getenv("DB_HOST", "localhost"),
+    "user": os.getenv("DB_USER", "root"),
+    "password": os.getenv("DB_PASSWORD", ""),
+    "database": os.getenv("DB_NAME", "waterDB")
+}
 
 # Database dependency
 def get_db():
     connection = None
     try:
-        connection = mysql.connector.connect(**Config.DB_CONFIG)
+        connection = mysql.connector.connect(**DB_CONFIG)
         yield connection
     except mysql.connector.Error as err:
         logging.error(f"Database connection error: {err}")
@@ -73,7 +92,7 @@ def get_db():
         if connection and connection.is_connected():
             connection.close()
 
-def generate_qrcode_id(length: int = Config.QR_SHORT_ID_LENGTH) -> str:
+def generate_qrcode_id(length: int = int(os.getenv("QR_SHORT_ID_LENGTH", "8"))) -> str:
     """Generate a unique QR code ID."""
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
@@ -172,7 +191,8 @@ async def exchange_qr(qrcode_id: str, db: mysql.connector.MySQLConnection = Depe
             raise HTTPException(status_code=404, detail="Código QR no encontrado")
             
         state, value = result
-        if state == 'valido' and value > Config.QR_MIN_VALUE:
+        min_value = float(os.getenv("QR_MIN_VALUE", "0.05"))
+        if state == 'valido' and value > min_value:
             # Update QR code
             update_query = 'UPDATE qr_codes SET state = "usado", value = 0, used_date = %s WHERE qrcode_id = %s'
             used_date = datetime.now()
@@ -192,7 +212,7 @@ if __name__ == '__main__':
     import uvicorn
     uvicorn.run(
         app,
-        host=Config.API_HOST,
-        port=Config.API_PORT,
-        log_level=Config.LOG_LEVEL.lower()
+        host=os.getenv("API_HOST", "0.0.0.0"),
+        port=int(os.getenv("API_PORT", "3000")),
+        log_level=os.getenv("LOG_LEVEL", "info").lower()
     ) 
