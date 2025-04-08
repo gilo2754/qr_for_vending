@@ -81,6 +81,41 @@
                 const fechaCreacion = `${anio}-${mes}-${dia}`;
 
                 try {
+                    // Crear contenedor para el código QR
+                    const qrContainer = document.createElement("div");
+                    qrContainer.className = "qr-container";
+
+                    // Crear contenedor para el código QR
+                    const qrCodeWrapper = document.createElement("div");
+                    qrCodeWrapper.className = "qr-code-wrapper";
+
+                    // Generar un ID temporal para el QR
+                    const tempId = "TEMP_" + Math.random().toString(36).substring(2, 10);
+                    
+                    // Generar el código QR
+                    console.log('Creando QR con texto temporal:', tempId);
+                    const qrCode = new QRCode(qrCodeWrapper, {
+                        text: tempId,
+                        width: 128,
+                        height: 128,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                    console.log('QR generado:', qrCode);
+
+                    // Agregar el canvas al contenedor
+                    qrCodeWrapper.appendChild(qrCode._el.querySelector("canvas"));
+                    qrContainer.appendChild(qrCodeWrapper);
+
+                    // Agregar el contenedor al div principal
+                    qrCodesDiv.appendChild(qrContainer);
+
+                    // Obtener la imagen del canvas en formato base64
+                    const canvas = qrCodeWrapper.querySelector("canvas");
+                    const qrImageBase64 = canvas.toDataURL("image/png");
+                    console.log('Imagen QR generada en base64');
+
                     // Enviar solicitud a la API para crear un nuevo código QR
                     const response = await fetch(`${API_URL}/api/qrdata`, {
                         method: 'POST',
@@ -90,7 +125,8 @@
                         body: JSON.stringify({ 
                             value: parseFloat(valor), 
                             creation_date: fechaCreacion + "T00:00:00.000Z", 
-                            state: estado 
+                            state: estado,
+                            qr_image: qrImageBase64
                         })
                     });
 
@@ -111,40 +147,17 @@
                         continue;
                     }
 
-                    // Crear contenedor para el código QR
-                    const qrContainer = document.createElement("div");
-                    qrContainer.className = "qr-container";
-
-                    // Crear contenedor para el código QR
-                    const qrCodeWrapper = document.createElement("div");
-                    qrCodeWrapper.className = "qr-code-wrapper";
-
-                    // Generar el código QR
-                    console.log('Creando QR con texto:', qrcode_id);
-                    const qrCode = new QRCode(qrCodeWrapper, {
-                        text: qrcode_id,
-                        width: 128,
-                        height: 128,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.H
-                    });
-                    console.log('QR generado:', qrCode);
-
-                    // Agregar el canvas al contenedor
-                    qrCodeWrapper.appendChild(qrCode._el.querySelector("canvas"));
-                    qrContainer.appendChild(qrCodeWrapper);
+                    // Actualizar el texto del QR con el ID real
+                    qrCode.clear();
+                    qrCode.makeCode(qrcode_id);
+                    console.log('QR actualizado con ID real:', qrcode_id);
 
                     // Agregar el ID del QR debajo del código
                     const qrcodeIdText = document.createElement("p");
                     qrcodeIdText.textContent = qrcode_id;
                     qrContainer.appendChild(qrcodeIdText);
 
-                    // Agregar el contenedor al div principal
-                    qrCodesDiv.appendChild(qrContainer);
-
                     // Guardar la imagen del código QR
-                    const canvas = qrCodeWrapper.querySelector("canvas");
                     canvas.toBlob(function (blob) {
                         saveAs(blob, `${filenamePrefix}${i + 1}.png`);
                     });
@@ -183,6 +196,20 @@
                 
                 // Mostrar la información del código QR
                 document.getElementById('informacionQR').textContent = JSON.stringify(data, null, 2);
+                
+                // Si hay una imagen QR, mostrarla
+                if (data.qr_image) {
+                    const qrImageContainer = document.createElement('div');
+                    qrImageContainer.innerHTML = '<h3>Imagen QR almacenada:</h3>';
+                    
+                    const qrImage = document.createElement('img');
+                    qrImage.src = data.qr_image;
+                    qrImage.alt = 'QR Code Image';
+                    qrImage.style.maxWidth = '200px';
+                    
+                    qrImageContainer.appendChild(qrImage);
+                    document.getElementById('informacionQR').appendChild(qrImageContainer);
+                }
             } catch (error) {
                 // Mostrar el error si ocurrió alguno
                 document.getElementById('informacionQR').textContent = 'Error: ' + error.message;

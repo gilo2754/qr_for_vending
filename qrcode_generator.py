@@ -10,6 +10,7 @@ import random
 import string
 import logging
 import os
+import base64
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -26,6 +27,7 @@ class QRCodeBase(BaseModel):
     value: float = Field(..., description="Value of the QR code")
     state: str = Field(..., description="State of the QR code")
     creation_date: datetime = Field(..., description="Creation date of the QR code")
+    qr_image: Optional[str] = Field(None, description="Base64 encoded QR image")
 
 class QRCodeCreate(QRCodeBase):
     pass
@@ -110,21 +112,42 @@ async def create_qr_data(qr_data: QRCodeCreate, db: mysql.connector.MySQLConnect
             break
 
     try:
-        query = 'INSERT INTO qr_codes (qrcode_id, value, state, creation_date) VALUES (%s, %s, %s, %s)'
-        values = (qrcode_id, qr_data.value, qr_data.state, qr_data.creation_date)
+        # Convert base64 image to binary if provided
+        qr_image_binary = None
+        if qr_data.qr_image:
+            # Remove the data URL prefix if present
+            if ',' in qr_data.qr_image:
+                qr_data.qr_image = qr_data.qr_image.split(',')[1]
+            try:
+                qr_image_binary = base64.b64decode(qr_data.qr_image)
+                logging.info(f"QR image decoded successfully, size: {len(qr_image_binary)} bytes")
+            except Exception as e:
+                logging.error(f"Error decoding QR image: {e}")
+                # Continue without the image if there's an error
+
+        # Insert the QR code data with the image
+        query = 'INSERT INTO qr_codes (qrcode_id, value, state, creation_date, qr_image) VALUES (%s, %s, %s, %s, %s)'
+        values = (qrcode_id, qr_data.value, qr_data.state, qr_data.creation_date, qr_image_binary)
         cursor.execute(query, values)
         db.commit()
+        logging.info(f"QR code created with ID: {qrcode_id}")
 
         # Fetch the created record
         cursor.execute('SELECT * FROM qr_codes WHERE qrcode_id = %s', (qrcode_id,))
         result = cursor.fetchone()
+        
+        # Convert binary image back to base64 for response
+        qr_image_base64 = None
+        if result[5]:  # If qr_image is not None
+            qr_image_base64 = base64.b64encode(result[5]).decode('utf-8')
         
         return QRCode(
             qrcode_id=result[0],
             value=float(result[1]),
             state=result[2],
             creation_date=result[3],
-            used_date=result[4]
+            used_date=result[4],
+            qr_image=qr_image_base64
         )
     except mysql.connector.Error as err:
         logging.error(f"Database error: {err}")
@@ -142,13 +165,19 @@ async def get_qr_data(qrcode_id: str, db: mysql.connector.MySQLConnection = Depe
         
         if not result:
             raise HTTPException(status_code=404, detail="Código QR no encontrado")
+        
+        # Convert binary image back to base64 for response
+        qr_image_base64 = None
+        if result[5]:  # If qr_image is not None
+            qr_image_base64 = base64.b64encode(result[5]).decode('utf-8')
             
         return QRCode(
             qrcode_id=result[0],
             value=float(result[1]),
             state=result[2],
             creation_date=result[3],
-            used_date=result[4]
+            used_date=result[4],
+            qr_image=qr_image_base64
         )
     finally:
         cursor.close()
@@ -165,16 +194,23 @@ async def get_all_qr_data(
         cursor.execute('SELECT * FROM qr_codes LIMIT %s OFFSET %s', (limit, skip))
         results = cursor.fetchall()
         
-        return [
-            QRCode(
+        qr_codes = []
+        for row in results:
+            # Convert binary image back to base64 for response
+            qr_image_base64 = None
+            if row[5]:  # If qr_image is not None
+                qr_image_base64 = base64.b64encode(row[5]).decode('utf-8')
+                
+            qr_codes.append(QRCode(
                 qrcode_id=row[0],
                 value=float(row[1]),
                 state=row[2],
                 creation_date=row[3],
-                used_date=row[4]
-            )
-            for row in results
-        ]
+                used_date=row[4],
+                qr_image=qr_image_base64
+            ))
+        
+        return qr_codes
     finally:
         cursor.close()
 
@@ -198,21 +234,12 @@ async def exchange_qr(qrcode_id: str, db: mysql.connector.MySQLConnection = Depe
             used_date = datetime.now()
             cursor.execute(update_query, (used_date, qrcode_id))
             db.commit()
-            
-            return {"message": f"Código QR {qrcode_id} canjeado exitosamente"}
+            return {"status": "success", "message": "QR code exchanged successfully"}
         else:
-            raise HTTPException(
-                status_code=400,
-                detail=f"El código QR {qrcode_id} no cumple con los requisitos para ser canjeado"
-            )
+            raise HTTPException(status_code=400, detail="QR code cannot be exchanged")
     finally:
         cursor.close()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        app,
-        host=os.getenv("API_HOST", "0.0.0.0"),
-        port=int(os.getenv("API_PORT", "3000")),
-        log_level=os.getenv("LOG_LEVEL", "info").lower()
-    ) 
+    uvicorn.run(app, host="0.0.0.0", port=8000) 

@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS qr_codes (
     value DECIMAL(10, 2),
     state VARCHAR(45),
     creation_date DATE,
-    used_date DATETIME
+    used_date DATETIME,
+    qr_image MEDIUMBLOB
 );
 
 -- Insert a test record to verify the table exists
