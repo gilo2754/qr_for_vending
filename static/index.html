@@ -41,8 +41,8 @@
     <div id="qrCodes"></div>
 
     <h2>Información del Código QR</h2>
-    <label for="short_id">ID del QR:</label>
-    <input type="text" id="short_id"><br><br>
+    <label for="qrcode_id">ID del QR:</label>
+    <input type="text" id="qrcode_id"><br><br>
     <button onclick="obtenerInformacion()">Obtener Información</button>
     <div id="informacionQR"></div>
 
@@ -86,7 +86,9 @@
                     }
 
                     const data = await response.json();
-                    const short_id_db = data.short_id;
+                    console.log('Respuesta de la API:', data);
+                    const qrcode_id = data.qrcode_id;
+                    console.log('ID del QR:', qrcode_id);
 
                     const qrContainer = document.createElement("div");
                     qrContainer.className = "qr-container";
@@ -95,19 +97,20 @@
                     qrCodeWrapper.className = "qr-code-wrapper";
 
                     const qrCode = new QRCode(qrCodeWrapper, {
-                        text: short_id_db,
+                        text: qrcode_id,
                         width: 128,
                         height: 128,
                         colorDark: "#000000",
                         colorLight: "#ffffff",
                         correctLevel: QRCode.CorrectLevel.H
                     });
+                    console.log('QR generado:', qrCode);
                     qrCodeWrapper.appendChild(qrCode._el.querySelector("canvas"));
                     qrContainer.appendChild(qrCodeWrapper);
 
-                    const shortIdText = document.createElement("p");
-                    shortIdText.textContent = short_id_db;
-                    qrContainer.appendChild(shortIdText);
+                    const qrcodeIdText = document.createElement("p");
+                    qrcodeIdText.textContent = qrcode_id;
+                    qrContainer.appendChild(qrcodeIdText);
 
                     qrCodesDiv.appendChild(qrContainer);
 
@@ -122,9 +125,9 @@
         }
 
         async function obtenerInformacion() {
-            const short_id = document.getElementById('short_id').value;
+            const qrcode_id = document.getElementById('qrcode_id').value;
             try {
-                const response = await fetch(`${API_URL}/api/qrdata/${short_id}`);
+                const response = await fetch(`${API_URL}/api/qrdata/${qrcode_id}`);
 
                 if (response.status === 404) {
                     document.getElementById('informacionQR').textContent = 'ID no encontrado.';
