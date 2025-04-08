@@ -242,4 +242,9 @@ async def exchange_qr(qrcode_id: str, db: mysql.connector.MySQLConnection = Depe
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    uvicorn.run(
+        app,
+        host=os.getenv("API_HOST", "0.0.0.0"),
+        port=int(os.getenv("API_PORT", "3000")),
+        log_level=os.getenv("LOG_LEVEL", "info").lower()
+    ) 
