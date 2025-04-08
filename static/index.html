@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de QR</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        .logout-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <button class="logout-button" onclick="logout()">Cerrar Sesión</button>
+    <h1>Generador de Códigos QR WP</h1>
+    
+    <div class="tab-container">
+        <div class="tab active" onclick="openTab('generator')">Generar QR</div>
+        <div class="tab" onclick="openTab('list')">Lista de QR</div>
+    </div>
+    
+    <div id="generator" class="tab-content active">
+        <div class="two-column-layout">
+            <div class="column">
+                <h2>Generar Códigos QR</h2>
+                <form id="qrForm">
+                    <div class="form-group">
+                        <label for="valor">Valor ($):</label>
+                        <input type="number" id="valor" value="1.5" placeholder="Ej: 100" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="estado">Estado del QR:</label>
+                        <select id="estado">
+                            <option value="valido">válido</option>
+                            <option value="enCirculacion">en Circulación</option>
+                            <option value="usado">usado</option>
+                            <option value="expirado">expirado</option>
+                            <option value="invalidado">invalidado</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cantidad">Cantidad de Códigos QR a generar:</label>
+                        <input type="number" id="cantidad" value="1" min="1" placeholder="Ej: 5">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="filenamePrefix">Nombre de archivo:</label>
+                        <input type="text" id="filenamePrefix" placeholder="Prefijo del archivo (ej: QR_)" value="QR_">
+                    </div>
+
+                    <div class="form-group">
+                        <button type="button" onclick="generarQR()">Generar Códigos QR y guardar en base de datos</button>
+                    </div>
+                </form>
+                <div id="qrCodes"></div>
+                
+                <div class="form-group" id="downloadAllContainer">
+                    <button type="button" onclick="descargarTodos()" class="btn">Descargar Todos los QR</button>
+                </div>
+            </div>
+            
+            <div class="column">
+                <h2>Información del Código QR</h2>
+                <div class="form-group">
+                    <label for="qrcode_id">ID del QR:</label>
+                    <input type="text" id="qrcode_id">
+                </div>
+                <div class="form-group">
+                    <button onclick="obtenerInformacion()">Obtener Información</button>
+                </div>
+                <div id="informacionQR"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="list" class="tab-content">
+        <div class="container">
+            <h1>Lista de Códigos QR</h1>
+            <button onclick="loadQRCodes()" class="refresh-button">Actualizar Lista</button>
+            
+            <div class="qr-stats">
+                <h3>Estadísticas de Códigos QR</h3>
+                <div class="stats-container">
+                    <div class="stat-item">
+                        <span class="stat-label">Válidos:</span>
+                        <span class="stat-value" id="valid-count">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">En Circulación:</span>
+                        <span class="stat-value" id="in-circulation-count">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Usados:</span>
+                        <span class="stat-value" id="used-count">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Expirados:</span>
+                        <span class="stat-value" id="expired-count">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Invalidados:</span>
+                        <span class="stat-value" id="invalidated-count">0</span>
+                    </div>
+                    <div class="stat-item stat-total">
+                        <span class="stat-label">Total:</span>
+                        <span class="stat-value" id="total-count">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="loading">Cargando códigos QR...</div>
+            <div id="error" class="error-message"></div>
+            <div id="qrList" class="qr-list"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script>
+        // Verificar si la biblioteca qrcodejs está cargada
+        console.log('QRCode disponible:', typeof QRCode !== 'undefined');
+        
+        // Obtener la URL de la API del entorno
+        const API_URL = window.location.origin;
+        
+        // Función para cambiar entre pestañas
+        function openTab(tabName) {
+            // Ocultar todos los contenidos de pestañas
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+            
+            // Desactivar todas las pestañas
+            const tabs = document.getElementsByClassName('tab');
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
+            }
+            
+            // Mostrar el contenido de la pestaña seleccionada
+            document.getElementById(tabName).classList.add('active');
+            
+            // Activar la pestaña seleccionada
+            event.currentTarget.classList.add('active');
+            
+            // Si se selecciona la pestaña de lista, cargar los códigos QR
+            if (tabName === 'list') {
+                loadQRCodes();
+            }
+        }
+
+        // Verificar autenticación al cargar la página
+        function checkAuth() {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+        }
+
+        // Función para cerrar sesión
+        function logout() {
+            localStorage.removeItem('access_token');
+            window.location.href = '/login.html';
+        }
+
+        // Función para obtener el token de autenticación
+        function getAuthToken() {
+            return localStorage.getItem('access_token');
+        }
+
+        /**
+         * Función para generar códigos QR
+         * Esta función obtiene los datos del formulario, envía una solicitud a la API
+         * para crear un nuevo código QR, y luego genera y muestra el código QR.
+         */
+        async function generarQR() {
+            // Obtener datos del formulario
+            const valor = document.getElementById("valor").value;
+            const estado = document.getElementById("estado").value;
+            const cantidad = parseInt(document.getElementById("cantidad").value);
+            const filenamePrefix = document.getElementById("filenamePrefix").value;
+
+            // Limpiar el contenedor de códigos QR
+            const qrCodesDiv = document.getElementById("qrCodes");
+            qrCodesDiv.innerHTML = "";
+            
+            // Ocultar el botón de descargar todos
+            document.getElementById("downloadAllContainer").style.display = "none";
+            
+            // Almacenar los canvas para descargar todos a la vez
+            window.qrCanvases = [];
+
+            // Generar la cantidad especificada de códigos QR
+            for (let i = 0; i < cantidad; i++) {
+                // Crear la fecha de creación en formato ISO
+                const fechaActual = new Date();
+                const anio = fechaActual.getFullYear();
+                const mes = String(fechaActual.getMonth() + 1).padStart(2, '0');
+                const dia = String(fechaActual.getDate()).padStart(2, '0');
+                const fechaCreacion = `${anio}-${mes}-${dia}`;
+
+                try {
+                    // Crear contenedor para el código QR
+                    const qrContainer = document.createElement("div");
+                    qrContainer.className = "qr-container";
+
+                    // Crear contenedor para el código QR
+                    const qrCodeWrapper = document.createElement("div");
+                    qrCodeWrapper.className = "qr-code-wrapper";
+
+                    // Generar un ID temporal para el QR
+                    const tempId = "TEMP_" + Math.random().toString(36).substring(2, 10);
+                    
+                    // Generar el código QR
+                    console.log('Creando QR con texto temporal:', tempId);
+                    const qrCode = new QRCode(qrCodeWrapper, {
+                        text: tempId,
+                        width: 128,
+                        height: 128,
+                        colorDark: "#000000",
+                        colorLight: "#ffffff",
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+                    console.log('QR generado:', qrCode);
+
+                    // Agregar el canvas al contenedor
+                    qrCodeWrapper.appendChild(qrCode._el.querySelector("canvas"));
+                    qrContainer.appendChild(qrCodeWrapper);
+
+                    // Agregar el contenedor al div principal
+                    qrCodesDiv.appendChild(qrContainer);
+
+                    // Obtener la imagen del canvas en formato base64
+                    const canvas = qrCodeWrapper.querySelector("canvas");
+                    const qrImageBase64 = canvas.toDataURL("image/png");
+                    console.log('Imagen QR generada en base64:', qrImageBase64.substring(0, 30) + '...');
+
+                    // Enviar solicitud a la API para crear un nuevo código QR
+                    const response = await fetch(`${API_URL}/api/qrdata`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${getAuthToken()}`
+                        },
+                        body: JSON.stringify({ 
+                            value: parseFloat(valor), 
+                            creation_date: fechaCreacion + "T00:00:00.000Z", 
+                            state: estado,
+                            qr_image: qrImageBase64
+                        })
+                    });
+
+                    // Verificar si la solicitud fue exitosa
+                    if (!response.ok) {
+                        if (response.status === 401) {
+                            // Token expirado o inválido
+                            window.location.href = '/login.html';
+                            return;
+                        }
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    // Obtener los datos de la respuesta
+                    const data = await response.json();
+                    console.log('Respuesta de la API:', data);
+                    const qrcode_id = data.qrcode_id;
+                    console.log('ID del QR:', qrcode_id);
+
+                    // Verificar si se recibió un ID de QR válido
+                    if (!qrcode_id) {
+                        console.error('Error: No se recibió un ID de QR válido');
+                        continue;
+                    }
+
+                    // Actualizar el texto del QR con el ID real
+                    qrCode.clear();
+                    qrCode.makeCode(qrcode_id);
+                    console.log('QR actualizado con ID real:', qrcode_id);
+
+                    // Agregar el ID del QR debajo del código
+                    const qrcodeIdText = document.createElement("p");
+                    qrcodeIdText.textContent = qrcode_id;
+                    qrContainer.appendChild(qrcodeIdText);
+
+                    // Crear botón para descargar la imagen
+                    const downloadButton = document.createElement("button");
+                    downloadButton.className = "btn";
+                    downloadButton.textContent = "Descargar QR";
+                    downloadButton.style.marginTop = "10px";
+                    downloadButton.onclick = function() {
+                        canvas.toBlob(function (blob) {
+                            saveAs(blob, `${filenamePrefix}${i + 1}.png`);
+                        });
+                    };
+                    qrContainer.appendChild(downloadButton);
+
+                    // Almacenar el canvas para descargar todos a la vez
+                    window.qrCanvases.push({
+                        canvas: canvas,
+                        filename: `${filenamePrefix}${i + 1}.png`
+                    });
+                    
+                    // Mostrar el botón de descargar todos si hay al menos un QR
+                    document.getElementById("downloadAllContainer").style.display = "block";
+                } catch (error) {
+                    console.error('Error sending data to API:', error);
+                }
+            }
+        }
+
+        /**
+         * Función para obtener información de un código QR
+         * Esta función obtiene el ID del código QR del input, envía una solicitud a la API
+         * para obtener la información del código QR, y luego muestra la información.
+         */
+        async function obtenerInformacion() {
+            // Obtener el ID del código QR del input
+            const qrcode_id = document.getElementById('qrcode_id').value;
+            
+            try {
+                // Enviar solicitud a la API para obtener la información del código QR
+                const response = await fetch(`${API_URL}/api/qrdata/${qrcode_id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    }
+                });
+
+                // Verificar si el código QR no fue encontrado
+                if (response.status === 404) {
+                    document.getElementById('informacionQR').textContent = 'ID no encontrado.';
+                    return;
+                }
+
+                // Verificar si la solicitud fue exitosa
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Obtener los datos de la respuesta
+                const data = await response.json();
+                
+                // Mostrar la información del código QR
+                document.getElementById('informacionQR').textContent = JSON.stringify(data, null, 2);
+                
+                // Si hay una imagen QR, mostrarla
+                if (data.qr_image) {
+                    const qrImageContainer = document.createElement('div');
+                    qrImageContainer.innerHTML = '<h3>Imagen QR almacenada:</h3>';
+                    
+                    const qrImage = document.createElement('img');
+                    
+                    // Asegurarse de que la imagen tenga el formato correcto
+                    let imageSrc = data.qr_image;
+                    if (!imageSrc.startsWith('data:')) {
+                        imageSrc = `data:image/png;base64,${imageSrc}`;
+                    }
+                    console.log(`Formato de imagen para QR ${data.qrcode_id}: ${imageSrc.substring(0, 30)}...`);
+                    qrImage.src = imageSrc;
+                    
+                    qrImage.alt = 'QR Code Image';
+                    qrImage.style.maxWidth = '200px';
+                    
+                    qrImageContainer.appendChild(qrImage);
+                    document.getElementById('informacionQR').appendChild(qrImageContainer);
+                }
+            } catch (error) {
+                // Mostrar el error si ocurrió alguno
+                document.getElementById('informacionQR').textContent = 'Error: ' + error.message;
+            }
+        }
+        
+        /**
+         * Función para cargar los códigos QR desde la API
+         * Esta función envía una solicitud a la API para obtener todos los códigos QR
+         * y luego muestra los códigos QR en la página.
+         */
+        async function loadQRCodes() {
+            const loadingElement = document.getElementById('loading');
+            const errorElement = document.getElementById('error');
+            const qrListElement = document.getElementById('qrList');
+            const statsContainer = document.querySelector('.stats-container');
+
+            // Mostrar mensaje de carga
+            loadingElement.style.display = 'block';
+            errorElement.style.display = 'none';
+            qrListElement.innerHTML = '';
+
+            try {
+                // Obtener la URL base de la API
+                const apiUrl = window.location.origin;
+                
+                // Cargar los códigos QR
+                const response = await fetch(`${apiUrl}/api/qrcodes`, {
+                    headers: {
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error(`Error al cargar los códigos QR: ${response.status}`);
+                }
+                const qrCodes = await response.json();
+
+                // Actualizar contadores
+                const stats = {
+                    valido: 0,
+                    enCirculacion: 0,
+                    usado: 0,
+                    expirado: 0,
+                    invalidado: 0,
+                    total: qrCodes.length
+                };
+
+                qrCodes.forEach(qr => {
+                    // Incrementar el contador correspondiente
+                    if (stats.hasOwnProperty(qr.state)) {
+                        stats[qr.state]++;
+                    } else {
+                        console.warn(`Estado desconocido: ${qr.state}`);
+                    }
+                });
+
+                // Actualizar los valores en el DOM
+                document.getElementById('valid-count').textContent = stats.valido;
+                document.getElementById('in-circulation-count').textContent = stats.enCirculacion;
+                document.getElementById('used-count').textContent = stats.usado;
+                document.getElementById('expired-count').textContent = stats.expirado;
+                document.getElementById('invalidated-count').textContent = stats.invalidado;
+                document.getElementById('total-count').textContent = stats.total;
+
+                // Mostrar la lista de códigos QR
+                qrCodes.forEach(qr => {
+                    const qrCard = document.createElement('div');
+                    qrCard.className = 'qr-card';
+                    
+                    // Crear el contenido HTML de la tarjeta
+                    let cardContent = `
+                        <h3>QR Code #${qr.qrcode_id}</h3>
+                        <div class="qr-info"><strong>Valor:</strong> ${qr.value}</div>
+                        <div class="qr-info"><strong>Estado:</strong> <span class="qr-state state-${qr.state}">${qr.state}</span></div>
+                        <div class="qr-info"><strong>Fecha de creación:</strong> ${new Date(qr.creation_date).toLocaleString()}</div>
+                        ${qr.used_date ? `<div class="qr-info"><strong>Fecha de uso:</strong> ${new Date(qr.used_date).toLocaleString()}</div>` : ''}
+                    `;
+                    
+                    // Añadir la imagen QR si está disponible
+                    if (qr.qr_image) {
+                        // Asegurarse de que la imagen tenga el formato correcto
+                        let imageSrc = qr.qr_image;
+                        if (!imageSrc.startsWith('data:')) {
+                            imageSrc = `data:image/png;base64,${imageSrc}`;
+                        }
+                        
+                        cardContent += `
+                            <div class="qr-image-container">
+                                <img src="${imageSrc}" alt="QR Code #${qr.qrcode_id}" class="qr-image">
+                            </div>
+                        `;
+                    }
+                    
+                    qrCard.innerHTML = cardContent;
+                    qrListElement.appendChild(qrCard);
+                });
+
+                // Ocultar mensaje de carga
+                loadingElement.style.display = 'none';
+            } catch (error) {
+                console.error('Error:', error);
+                errorElement.textContent = error.message;
+                errorElement.style.display = 'block';
+                loadingElement.style.display = 'none';
+            }
+        }
+
+        // Cargar los códigos QR al cargar la página
+        document.addEventListener('DOMContentLoaded', loadQRCodes);
+
+        // Función para actualizar los datos
+        function refreshData() {
+            loadQRCodes();
+        }
+
+        // Verificar autenticación al cargar la página
+        checkAuth();
+    </script>
+</body>
+</html>
