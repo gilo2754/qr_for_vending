@@ -17,13 +17,14 @@ services:
       - DEBUG=True
     depends_on:
       - db
-    volumes:
-      - .:/app
+    command: sh -c "python qrcode_generator.py"
     networks:
       - qr-network
 
   db:
-    image: mysql:8.0
+    build:
+      context: .
+      dockerfile: Dockerfile.db
     ports:
       - "3306:3306"
     environment:
@@ -33,9 +34,10 @@ services:
       - MYSQL_PASSWORD=${DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./create_database_schema.sql:/docker-entrypoint-initdb.d/init.sql
+    command: --default-authentication-plugin=mysql_native_password
     networks:
       - qr-network
+    restart: unless-stopped
 
   mysql-backup:
     image: alpine:latest
@@ -43,27 +45,23 @@ services:
     volumes:
       - ./backups:/backups
       - ./scripts:/scripts
-      - ./scripts/crontab:/etc/crontabs/root
       - mysql_data:/var/lib/mysql:ro
     environment:
       - DB_HOST=${DB_HOST}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
-      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_ACCESS_TOKEN=${GOOGLE_ACCESS_TOKEN}
-      - GOOGLE_REFRESH_TOKEN=${GOOGLE_REFRESH_TOKEN}
-    entrypoint: ["/bin/sh", "-c", "chmod +x /scripts/backup-mysql.sh && apk add --no-cache mysql-client rclone && crond -f -L /var/log/cron.log"]
-    depends_on:
-      - db
+    command: sh -c "while true; do sleep 3600; /scripts/backup.sh; done"
     networks:
       - qr-network
-    env_file: stack.env
-
-volumes:
-  mysql_data:
+    depends_on:
+      - db
 
 networks:
   qr-network:
     driver: bridge
+
+volumes:
+  mysql_data:
+    name: qr_mysql_data
+    driver: local
