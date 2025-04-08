@@ -393,13 +393,32 @@
                 qrCodes.forEach(qr => {
                     const qrCard = document.createElement('div');
                     qrCard.className = 'qr-card';
-                    qrCard.innerHTML = `
+                    
+                    // Crear el contenido HTML de la tarjeta
+                    let cardContent = `
                         <h3>QR Code #${qr.qrcode_id}</h3>
                         <div class="qr-info"><strong>Valor:</strong> ${qr.value}</div>
                         <div class="qr-info"><strong>Estado:</strong> ${qr.state}</div>
                         <div class="qr-info"><strong>Fecha de creación:</strong> ${new Date(qr.creation_date).toLocaleString()}</div>
                         ${qr.used_date ? `<div class="qr-info"><strong>Fecha de uso:</strong> ${new Date(qr.used_date).toLocaleString()}</div>` : ''}
                     `;
+                    
+                    // Añadir la imagen QR si está disponible
+                    if (qr.qr_image) {
+                        // Asegurarse de que la imagen tenga el formato correcto
+                        let imageSrc = qr.qr_image;
+                        if (!imageSrc.startsWith('data:')) {
+                            imageSrc = `data:image/png;base64,${imageSrc}`;
+                        }
+                        
+                        cardContent += `
+                            <div class="qr-image-container">
+                                <img src="${imageSrc}" alt="QR Code #${qr.qrcode_id}" class="qr-image">
+                            </div>
+                        `;
+                    }
+                    
+                    qrCard.innerHTML = cardContent;
                     qrListElement.appendChild(qrCard);
                 });
 
