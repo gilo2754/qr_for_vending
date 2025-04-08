@@ -1,12 +1,23 @@
 import sys
 import requests
 import time
-from config import Config
+import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env
+load_dotenv()
+
+class Config:
+    """Configuración del lector QR"""
+    API_URL = os.getenv('API_URL', 'http://localhost:3000')
+    QR_MIN_VALUE = float(os.getenv('QR_MIN_VALUE', '10.0'))
 
 def leer_qr_desde_lector_usb():
     """Lee códigos QR desde un lector USB, procesa la información y actualiza la base de datos."""
 
-    print("Esperando la lectura de códigos QR desde el lector USB...")
+    print(f"Esperando la lectura de códigos QR desde el lector USB...")
+    print(f"API URL: {Config.API_URL}")
+    print(f"Valor mínimo QR: {Config.QR_MIN_VALUE}")
 
     while True:
         try:
