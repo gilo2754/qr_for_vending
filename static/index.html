@@ -49,6 +49,9 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script>
+        // Obtener la URL de la API del entorno
+        const API_URL = window.location.origin;
+
         async function generarQR() {
             const valor = document.getElementById("valor").value;
             const estado = document.getElementById("estado").value;
@@ -66,7 +69,7 @@
                 const fechaCreacion = `${anio}-${mes}-${dia}`;
 
                 try {
-                    const response = await fetch('http://localhost:3000/api/qrdata', {
+                    const response = await fetch(`${API_URL}/api/qrdata`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -121,7 +124,7 @@
         async function obtenerInformacion() {
             const short_id = document.getElementById('short_id').value;
             try {
-                const response = await fetch(`http://localhost:3000/api/qrdata/${short_id}`);
+                const response = await fetch(`${API_URL}/api/qrdata/${short_id}`);
 
                 if (response.status === 404) {
                     document.getElementById('informacionQR').textContent = 'ID no encontrado.';
