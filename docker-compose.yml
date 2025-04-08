@@ -34,7 +34,6 @@ services:
       - MYSQL_PASSWORD=${DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./01-create-database.sql:/docker-entrypoint-initdb.d/01-create-database.sql
     command: --default-authentication-plugin=mysql_native_password
     networks:
       - qr-network
