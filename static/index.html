@@ -374,7 +374,8 @@
                     qrImageContainer.innerHTML = '<h3>Imagen QR almacenada:</h3>';
                     
                     const qrImage = document.createElement('img');
-                    qrImage.src = data.qr_image;
+                    // Añadir el prefijo data:image/png;base64, si no lo tiene
+                    qrImage.src = data.qr_image.startsWith('data:') ? data.qr_image : `data:image/png;base64,${data.qr_image}`;
                     qrImage.alt = 'QR Code Image';
                     qrImage.style.maxWidth = '200px';
                     
@@ -402,6 +403,7 @@
             qrListElement.innerHTML = '';
             
             try {
+                console.log('Cargando códigos QR desde:', `${API_URL}/api/qrcodes`);
                 const response = await fetch(`${API_URL}/api/qrcodes`);
                 
                 if (!response.ok) {
@@ -409,22 +411,39 @@
                 }
                 
                 const qrCodes = await response.json();
+                console.log('Códigos QR recibidos:', qrCodes.length);
                 
                 if (qrCodes.length === 0) {
                     qrListElement.innerHTML = '<p>No hay códigos QR disponibles.</p>';
                 } else {
-                    qrCodes.forEach(qr => {
+                    qrCodes.forEach((qr, index) => {
+                        console.log(`Procesando QR ${index + 1}:`, qr.qrcode_id);
+                        
                         const qrCard = document.createElement('div');
                         qrCard.className = 'qr-card';
                         
                         // Crear imagen QR si está disponible
                         if (qr.qr_image) {
+                            console.log(`QR ${qr.qrcode_id} tiene imagen`);
                             const qrImage = document.createElement('img');
                             qrImage.className = 'qr-image';
-                            qrImage.src = qr.qr_image;
+                            // Añadir el prefijo data:image/png;base64, si no lo tiene
+                            qrImage.src = qr.qr_image.startsWith('data:') ? qr.qr_image : `data:image/png;base64,${qr.qr_image}`;
                             qrImage.alt = `QR Code: ${qr.qrcode_id}`;
+                            qrImage.onerror = function() {
+                                console.error(`Error al cargar la imagen para QR ${qr.qrcode_id}`);
+                                this.style.display = 'none';
+                                const errorMsg = document.createElement('div');
+                                errorMsg.textContent = 'Error al cargar imagen';
+                                errorMsg.style.color = 'red';
+                                this.parentNode.appendChild(errorMsg);
+                            };
+                            qrImage.onload = function() {
+                                console.log(`Imagen cargada correctamente para QR ${qr.qrcode_id}`);
+                            };
                             qrCard.appendChild(qrImage);
                         } else {
+                            console.log(`QR ${qr.qrcode_id} no tiene imagen`);
                             // Si no hay imagen, mostrar un placeholder
                             const placeholder = document.createElement('div');
                             placeholder.className = 'qr-image';
@@ -479,6 +498,7 @@
                     });
                 }
             } catch (error) {
+                console.error('Error al cargar códigos QR:', error);
                 errorElement.textContent = error.message;
                 errorElement.style.display = 'block';
             } finally {
