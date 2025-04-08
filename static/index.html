@@ -253,6 +253,10 @@
                     </div>
                 </form>
                 <div id="qrCodes"></div>
+                
+                <div class="form-group" id="downloadAllContainer" style="display: none; margin-top: 20px;">
+                    <button type="button" onclick="descargarTodos()" class="btn">Descargar Todos los QR</button>
+                </div>
             </div>
             
             <div class="column">
@@ -329,6 +333,12 @@
             // Limpiar el contenedor de códigos QR
             const qrCodesDiv = document.getElementById("qrCodes");
             qrCodesDiv.innerHTML = "";
+            
+            // Ocultar el botón de descargar todos
+            document.getElementById("downloadAllContainer").style.display = "none";
+            
+            // Almacenar los canvas para descargar todos a la vez
+            window.qrCanvases = [];
 
             // Generar la cantidad especificada de códigos QR
             for (let i = 0; i < cantidad; i++) {
@@ -416,10 +426,26 @@
                     qrcodeIdText.textContent = qrcode_id;
                     qrContainer.appendChild(qrcodeIdText);
 
-                    // Guardar la imagen del código QR
-                    canvas.toBlob(function (blob) {
-                        saveAs(blob, `${filenamePrefix}${i + 1}.png`);
+                    // Crear botón para descargar la imagen
+                    const downloadButton = document.createElement("button");
+                    downloadButton.className = "btn";
+                    downloadButton.textContent = "Descargar QR";
+                    downloadButton.style.marginTop = "10px";
+                    downloadButton.onclick = function() {
+                        canvas.toBlob(function (blob) {
+                            saveAs(blob, `${filenamePrefix}${i + 1}.png`);
+                        });
+                    };
+                    qrContainer.appendChild(downloadButton);
+
+                    // Almacenar el canvas para descargar todos a la vez
+                    window.qrCanvases.push({
+                        canvas: canvas,
+                        filename: `${filenamePrefix}${i + 1}.png`
                     });
+                    
+                    // Mostrar el botón de descargar todos si hay al menos un QR
+                    document.getElementById("downloadAllContainer").style.display = "block";
                 } catch (error) {
                     console.error('Error sending data to API:', error);
                 }
@@ -606,6 +632,22 @@
             } finally {
                 loadingElement.style.display = 'none';
             }
+        }
+
+        /**
+         * Función para descargar todos los códigos QR generados
+         */
+        function descargarTodos() {
+            if (!window.qrCanvases || window.qrCanvases.length === 0) {
+                alert("No hay códigos QR para descargar");
+                return;
+            }
+            
+            window.qrCanvases.forEach(item => {
+                item.canvas.toBlob(function(blob) {
+                    saveAs(blob, item.filename);
+                });
+            });
         }
     </script>
 </body>
