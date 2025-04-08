@@ -129,16 +129,20 @@ async def create_qr_data(
     current_user: dict = Depends(check_admin_role)  # Solo administradores pueden crear QR
 ):
     """Create a new QR code entry."""
-    cursor = db.cursor()
-
-    # Generate unique qrcode_id
-    while True:
-        qrcode_id = generate_qrcode_id()
-        cursor.execute('SELECT 1 FROM qr_codes WHERE qrcode_id = %s', (qrcode_id,))
-        if cursor.fetchone() is None:
-            break
-
+    db = None
+    cursor = None
     try:
+        # Obtener conexión a la base de datos
+        db = mysql.connector.connect(**DB_CONFIG)
+        cursor = db.cursor()
+
+        # Generate unique qrcode_id
+        while True:
+            qrcode_id = generate_qrcode_id()
+            cursor.execute('SELECT 1 FROM qr_codes WHERE qrcode_id = %s', (qrcode_id,))
+            if cursor.fetchone() is None:
+                break
+
         # Convert base64 image to binary if provided
         qr_image_binary = None
         if qr_data.qr_image:
@@ -180,7 +184,10 @@ async def create_qr_data(
         logging.error(f"Database error: {err}")
         raise HTTPException(status_code=500, detail="Error en la base de datos")
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
+        if db and db.is_connected():
+            db.close()
 
 @app.get("/api/qrdata/{qrcode_id}", response_model=QRCode)
 async def get_qr_data(
@@ -188,8 +195,13 @@ async def get_qr_data(
     current_user: dict = Depends(get_current_active_user)
 ):
     """Get QR code information by qrcode_id."""
-    cursor = db.cursor()
+    db = None
+    cursor = None
     try:
+        # Obtener conexión a la base de datos
+        db = mysql.connector.connect(**DB_CONFIG)
+        cursor = db.cursor()
+        
         cursor.execute('SELECT * FROM qr_codes WHERE qrcode_id = %s', (qrcode_id,))
         result = cursor.fetchone()
         
@@ -213,35 +225,75 @@ async def get_qr_data(
         logging.error(f"Database error: {err}")
         raise HTTPException(status_code=500, detail="Error en la base de datos")
     finally:
-        cursor.close()
+        if cursor:
+            cursor.close()
+        if db and db.is_connected():
+            db.close()
 
 @app.get("/api/qrcodes", response_model=List[QRCode])
-async def get_all_qrcodes(current_user: dict = Depends(get_current_active_user)):
+async def get_all_qrcodes(
+    current_user: dict = Depends(get_current_active_user),
+    skip: int = 0,
+    limit: int = 100
+):
     """List all QR codes with pagination."""
-    cursor = db.cursor()
+    logging.info(f"Obteniendo códigos QR con paginación: skip={skip}, limit={limit}")
+    db = None
+    cursor = None
     try:
+        # Obtener conexión a la base de datos
+        db = mysql.connector.connect(**DB_CONFIG)
+        cursor = db.cursor()
+        
+        # Verificar si la tabla existe
+        cursor.execute("SHOW TABLES LIKE 'qr_codes'")
+        if not cursor.fetchone():
+            logging.error("La tabla 'qr_codes' no existe en la base de datos")
+            raise HTTPException(status_code=500, detail="La tabla 'qr_codes' no existe en la base de datos")
+        
+        # Obtener el total de registros
+        cursor.execute('SELECT COUNT(*) FROM qr_codes')
+        total_count = cursor.fetchone()[0]
+        logging.info(f"Total de códigos QR: {total_count}")
+        
+        # Obtener los registros con paginación
         cursor.execute('SELECT * FROM qr_codes LIMIT %s OFFSET %s', (limit, skip))
         results = cursor.fetchall()
+        logging.info(f"Obtenidos {len(results)} códigos QR")
         
         qr_codes = []
         for row in results:
-            # Convert binary image back to base64 for response
-            qr_image_base64 = None
-            if row[5]:  # If qr_image is not None
-                qr_image_base64 = base64.b64encode(row[5]).decode('utf-8')
-                
-            qr_codes.append(QRCode(
-                qrcode_id=row[0],
-                value=float(row[1]),
-                state=row[2],
-                creation_date=row[3],
-                used_date=row[4],
-                qr_image=qr_image_base64
-            ))
+            try:
+                # Convert binary image back to base64 for response
+                qr_image_base64 = None
+                if row[5]:  # If qr_image is not None
+                    qr_image_base64 = base64.b64encode(row[5]).decode('utf-8')
+                    
+                qr_codes.append(QRCode(
+                    qrcode_id=row[0],
+                    value=float(row[1]),
+                    state=row[2],
+                    creation_date=row[3],
+                    used_date=row[4],
+                    qr_image=qr_image_base64
+                ))
+            except Exception as e:
+                logging.error(f"Error procesando fila {row}: {e}")
+                # Continuar con la siguiente fila
+                continue
         
         return qr_codes
+    except mysql.connector.Error as err:
+        logging.error(f"Error de base de datos: {err}")
+        raise HTTPException(status_code=500, detail=f"Error de base de datos: {str(err)}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.error(f"Error al obtener códigos QR: {e}")
+        raise HTTPException(status_code=500, detail=f"Error al cargar los códigos QR: {str(e)}")
+    finally:
+        if cursor:
+            cursor.close()
+        if db and db.is_connected():
+            db.close()
 
 @app.put("/api/qrdata/exchange/{qrcode_id}")
 async def exchange_qr(qrcode_id: str, db: mysql.connector.MySQLConnection = Depends(get_db)):
