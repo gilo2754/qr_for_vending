@@ -97,6 +97,7 @@ h1, h2 {
     padding: 3px 8px;
     border-radius: 4px;
     font-size: 0.9em;
+    font-weight: bold;
 }
 
 .state-valido {
@@ -114,7 +115,7 @@ h1, h2 {
     color: #721c24;
 }
 
-.state-encirculacion {
+.state-enCirculacion {
     background-color: #fff3cd;
     color: #856404;
 }
@@ -336,4 +337,17 @@ h1, h2 {
     background-color: #f8d7da;
     border-radius: 4px;
     text-align: center;
+}
+
+#downloadAllContainer {
+    display: none;
+    margin-top: 20px;
+}
+
+#loading {
+    display: none;
+}
+
+#error {
+    display: none;
 } 
