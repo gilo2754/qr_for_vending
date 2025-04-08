@@ -151,6 +151,62 @@
         .tab-content.active {
             display: block;
         }
+        
+        /* Estilos para el layout de dos columnas */
+        .two-column-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .column {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .column h2 {
+            text-align: center;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .form-group button {
+            width: 100%;
+            padding: 10px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .form-group button:hover {
+            background-color: #0052a3;
+        }
+        #informacionQR {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -162,34 +218,55 @@
     </div>
     
     <div id="generator" class="tab-content active">
-        <form id="qrForm">
-            <label for="valor">Valor ($):</label>
-            <input type="number" id="valor" value="1.5" placeholder="Ej: 100" required><br><br>
+        <div class="two-column-layout">
+            <div class="column">
+                <h2>Generar Códigos QR</h2>
+                <form id="qrForm">
+                    <div class="form-group">
+                        <label for="valor">Valor ($):</label>
+                        <input type="number" id="valor" value="1.5" placeholder="Ej: 100" required>
+                    </div>
 
-            <label for="estado">Estado del QR:</label>
-            <select id="estado">
-                <option value="valido">válido</option>
-                <option value="enCirculacion">en Circulación</option>
-                <option value="usado">usado</option>
-                <option value="expirado">expirado</option>
-                <option value="invalidado">invalidado</option>
-            </select><br><br>
+                    <div class="form-group">
+                        <label for="estado">Estado del QR:</label>
+                        <select id="estado">
+                            <option value="valido">válido</option>
+                            <option value="enCirculacion">en Circulación</option>
+                            <option value="usado">usado</option>
+                            <option value="expirado">expirado</option>
+                            <option value="invalidado">invalidado</option>
+                        </select>
+                    </div>
 
-            <label for="cantidad">Cantidad de Códigos QR a generar:</label>
-            <input type="number" id="cantidad" value="1" min="1" placeholder="Ej: 5"><br><br>
+                    <div class="form-group">
+                        <label for="cantidad">Cantidad de Códigos QR a generar:</label>
+                        <input type="number" id="cantidad" value="1" min="1" placeholder="Ej: 5">
+                    </div>
 
-            <label for="filenamePrefix">Nombre de archivo:</label>
-            <input type="text" id="filenamePrefix" placeholder="Prefijo del archivo (ej: QR_)" value="QR_"><br><br>
+                    <div class="form-group">
+                        <label for="filenamePrefix">Nombre de archivo:</label>
+                        <input type="text" id="filenamePrefix" placeholder="Prefijo del archivo (ej: QR_)" value="QR_">
+                    </div>
 
-            <button type="button" onclick="generarQR()">Generar Códigos QR y guardar en base de datos</button>
-        </form>
-        <div id="qrCodes"></div>
-
-        <h2>Consulta información del Código QR</h2>
-        <label for="qrcode_id">ID del QR:</label>
-        <input type="text" id="qrcode_id"><br><br>
-        <button onclick="obtenerInformacion()">Obtener Información</button>
-        <div id="informacionQR"></div>
+                    <div class="form-group">
+                        <button type="button" onclick="generarQR()">Generar Códigos QR y guardar en base de datos</button>
+                    </div>
+                </form>
+                <div id="qrCodes"></div>
+            </div>
+            
+            <div class="column">
+                <h2>Información del Código QR</h2>
+                <div class="form-group">
+                    <label for="qrcode_id">ID del QR:</label>
+                    <input type="text" id="qrcode_id">
+                </div>
+                <div class="form-group">
+                    <button onclick="obtenerInformacion()">Obtener Información</button>
+                </div>
+                <div id="informacionQR"></div>
+            </div>
+        </div>
     </div>
     
     <div id="list" class="tab-content">
