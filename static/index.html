@@ -364,24 +364,29 @@
 
                 // Actualizar contadores
                 const stats = {
-                    valid: 0,
-                    in_circulation: 0,
-                    used: 0,
-                    expired: 0,
-                    invalidated: 0,
+                    valido: 0,
+                    enCirculacion: 0,
+                    usado: 0,
+                    expirado: 0,
+                    invalidado: 0,
                     total: qrCodes.length
                 };
 
                 qrCodes.forEach(qr => {
-                    stats[qr.state]++;
+                    // Incrementar el contador correspondiente
+                    if (stats.hasOwnProperty(qr.state)) {
+                        stats[qr.state]++;
+                    } else {
+                        console.warn(`Estado desconocido: ${qr.state}`);
+                    }
                 });
 
                 // Actualizar los valores en el DOM
-                document.getElementById('valid-count').textContent = stats.valid;
-                document.getElementById('in-circulation-count').textContent = stats.in_circulation;
-                document.getElementById('used-count').textContent = stats.used;
-                document.getElementById('expired-count').textContent = stats.expired;
-                document.getElementById('invalidated-count').textContent = stats.invalidated;
+                document.getElementById('valid-count').textContent = stats.valido;
+                document.getElementById('in-circulation-count').textContent = stats.enCirculacion;
+                document.getElementById('used-count').textContent = stats.usado;
+                document.getElementById('expired-count').textContent = stats.expirado;
+                document.getElementById('invalidated-count').textContent = stats.invalidado;
                 document.getElementById('total-count').textContent = stats.total;
 
                 // Mostrar la lista de códigos QR
