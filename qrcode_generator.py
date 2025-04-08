@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
@@ -12,6 +12,14 @@ import logging
 import os
 import base64
 from dotenv import load_dotenv
+from fastapi.security import OAuth2PasswordRequestForm
+from auth import (
+    authenticate_user,
+    create_access_token,
+    get_current_active_user,
+    check_admin_role,
+    ACCESS_TOKEN_EXPIRE_MINUTES
+)
 
 # Load environment variables
 load_dotenv()
@@ -58,6 +66,22 @@ app.add_middleware(
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Ruta de autenticación
+@app.post("/token")
+async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    user = authenticate_user(form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Usuario o contraseña incorrectos",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user["username"]}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
 # Serve index.html at root
 @app.get("/")
 async def read_root():
@@ -100,7 +124,10 @@ def generate_qrcode_id(length: int = int(os.getenv("QR_SHORT_ID_LENGTH", "8"))) 
     return ''.join(random.choice(characters) for _ in range(length))
 
 @app.post("/api/qrdata", response_model=QRCode)
-async def create_qr_data(qr_data: QRCodeCreate, db: mysql.connector.MySQLConnection = Depends(get_db)):
+async def create_qr_data(
+    qr_data: QRCodeCreate,
+    current_user: dict = Depends(check_admin_role)  # Solo administradores pueden crear QR
+):
     """Create a new QR code entry."""
     cursor = db.cursor()
 
@@ -156,7 +183,10 @@ async def create_qr_data(qr_data: QRCodeCreate, db: mysql.connector.MySQLConnect
         cursor.close()
 
 @app.get("/api/qrdata/{qrcode_id}", response_model=QRCode)
-async def get_qr_data(qrcode_id: str, db: mysql.connector.MySQLConnection = Depends(get_db)):
+async def get_qr_data(
+    qrcode_id: str,
+    current_user: dict = Depends(get_current_active_user)
+):
     """Get QR code information by qrcode_id."""
     cursor = db.cursor()
     try:
@@ -179,15 +209,14 @@ async def get_qr_data(qrcode_id: str, db: mysql.connector.MySQLConnection = Depe
             used_date=result[4],
             qr_image=qr_image_base64
         )
+    except mysql.connector.Error as err:
+        logging.error(f"Database error: {err}")
+        raise HTTPException(status_code=500, detail="Error en la base de datos")
     finally:
         cursor.close()
 
 @app.get("/api/qrcodes", response_model=List[QRCode])
-async def get_all_qr_data(
-    skip: int = 0,
-    limit: int = 20,
-    db: mysql.connector.MySQLConnection = Depends(get_db)
-):
+async def get_all_qrcodes(current_user: dict = Depends(get_current_active_user)):
     """List all QR codes with pagination."""
     cursor = db.cursor()
     try:
@@ -211,8 +240,8 @@ async def get_all_qr_data(
             ))
         
         return qr_codes
-    finally:
-        cursor.close()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/api/qrdata/exchange/{qrcode_id}")
 async def exchange_qr(qrcode_id: str, db: mysql.connector.MySQLConnection = Depends(get_db)):
