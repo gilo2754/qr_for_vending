@@ -27,7 +27,7 @@ h1, h2 {
 /* Estilos para la lista de códigos QR */
 .qr-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 20px;
     margin-top: 20px;
 }
@@ -103,11 +103,6 @@ h1, h2 {
 .state-valido {
     background-color: #d4edda;
     color: #155724;
-}
-
-.state-active {
-    background-color: #cce5ff;
-    color: #004085;
 }
 
 .state-usado {
