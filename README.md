@@ -66,6 +66,22 @@ Once the server is running, you can access:
 - GET `/api/qrcodes` - List all QR codes (with pagination)
 - PUT `/api/qrdata/exchange/{qrcode_id}` - Exchange a QR code
 
+## Estados de los Códigos QR
+
+Los códigos QR pueden tener los siguientes estados:
+
+- **válido**: El código QR está activo y puede ser utilizado para realizar una compra en la máquina expendedora.
+- **enCirculación**: El código QR ha sido generado y está en manos de un usuario, pero aún no ha sido utilizado.
+- **usado**: El código QR ya ha sido canjeado por un producto en la máquina expendedora y no puede volver a utilizarse.
+- **expirado**: El código QR ha superado su fecha de validez y ya no puede ser utilizado.
+- **invalidado**: El código QR ha sido invalidado manualmente por alguna razón (por ejemplo, si se detecta un problema o fraude).
+
+Estos estados permiten:
+- Rastrear el ciclo de vida completo de un código QR
+- Prevenir el uso múltiple de un mismo código
+- Gestionar la validez temporal de los códigos
+- Responder a situaciones excepcionales
+
 ## Development
 
 To run the application in development mode:

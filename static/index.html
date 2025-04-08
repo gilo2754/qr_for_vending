@@ -83,6 +83,14 @@
             background-color: #fff3cd;
             color: #856404;
         }
+        .state-expirado {
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+        .state-invalidado {
+            background-color: #dc3545;
+            color: #ffffff;
+        }
         .controls {
             text-align: center;
             margin: 20px 0;
@@ -160,8 +168,11 @@
 
             <label for="estado">Estado del QR:</label>
             <select id="estado">
-                <option value="valido">valido</option>
-                <option value="enCirculacion">en Circulacion</option>
+                <option value="valido">válido</option>
+                <option value="enCirculacion">en Circulación</option>
+                <option value="usado">usado</option>
+                <option value="expirado">expirado</option>
+                <option value="invalidado">invalidado</option>
             </select><br><br>
 
             <label for="cantidad">Cantidad de Códigos QR a generar:</label>
@@ -174,7 +185,7 @@
         </form>
         <div id="qrCodes"></div>
 
-        <h2>Información del Código QR</h2>
+        <h2>Consulta información del Código QR</h2>
         <label for="qrcode_id">ID del QR:</label>
         <input type="text" id="qrcode_id"><br><br>
         <button onclick="obtenerInformacion()">Obtener Información</button>
