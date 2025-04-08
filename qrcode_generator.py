@@ -94,6 +94,18 @@ async def read_root():
             content={"detail": "Error loading the application interface"}
         )
 
+# Serve login.html
+@app.get("/login.html")
+async def login_page():
+    try:
+        return FileResponse("static/login.html")
+    except Exception as e:
+        logging.error(f"Error serving login.html: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Error loading the login page"}
+        )
+
 # Database configuration
 DB_CONFIG = {
     "host": os.getenv("DB_HOST", "localhost"),

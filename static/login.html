@@ -112,7 +112,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     localStorage.setItem('access_token', data.access_token);
-                    window.location.href = '/index.html';
+                    window.location.href = '/';
                 } else {
                     errorMessage.textContent = 'Usuario o contraseña incorrectos';
                     errorMessage.style.display = 'block';
