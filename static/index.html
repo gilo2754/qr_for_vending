@@ -49,6 +49,9 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script>
+        // Verificar si la biblioteca qrcodejs está cargada
+        console.log('QRCode disponible:', typeof QRCode !== 'undefined');
+        
         // Obtener la URL de la API del entorno
         const API_URL = window.location.origin;
 
@@ -90,12 +93,18 @@
                     const qrcode_id = data.qrcode_id;
                     console.log('ID del QR:', qrcode_id);
 
+                    if (!qrcode_id) {
+                        console.error('Error: No se recibió un ID de QR válido');
+                        return;
+                    }
+
                     const qrContainer = document.createElement("div");
                     qrContainer.className = "qr-container";
 
                     const qrCodeWrapper = document.createElement("div");
                     qrCodeWrapper.className = "qr-code-wrapper";
 
+                    console.log('Creando QR con texto:', qrcode_id);
                     const qrCode = new QRCode(qrCodeWrapper, {
                         text: qrcode_id,
                         width: 128,
@@ -105,7 +114,16 @@
                         correctLevel: QRCode.CorrectLevel.H
                     });
                     console.log('QR generado:', qrCode);
-                    qrCodeWrapper.appendChild(qrCode._el.querySelector("canvas"));
+                    
+                    // Verificar si el canvas se creó correctamente
+                    const qrCanvas = qrCodeWrapper.querySelector("canvas");
+                    if (!qrCanvas) {
+                        console.error('Error: No se pudo crear el canvas para el QR');
+                        return;
+                    }
+                    console.log('Canvas creado:', qrCanvas);
+                    
+                    qrCodeWrapper.appendChild(qrCanvas);
                     qrContainer.appendChild(qrCodeWrapper);
 
                     const qrcodeIdText = document.createElement("p");
@@ -114,10 +132,21 @@
 
                     qrCodesDiv.appendChild(qrContainer);
 
-                    const canvas = qrCodeWrapper.querySelector("canvas");
-                    canvas.toBlob(function (blob) {
-                        saveAs(blob, `${filenamePrefix}${i + 1}.png`);
-                    });
+                    // Guardar la imagen
+                    try {
+                        console.log('Intentando guardar la imagen del QR...');
+                        qrCanvas.toBlob(function (blob) {
+                            if (blob) {
+                                console.log('Blob creado, tamaño:', blob.size);
+                                saveAs(blob, `${filenamePrefix}${i + 1}.png`);
+                                console.log('Imagen guardada como:', `${filenamePrefix}${i + 1}.png`);
+                            } else {
+                                console.error('Error: No se pudo crear el blob para la imagen');
+                            }
+                        }, 'image/png');
+                    } catch (error) {
+                        console.error('Error al guardar la imagen:', error);
+                    }
                 } catch (error) {
                     console.error('Error sending data to API:', error);
                 }
