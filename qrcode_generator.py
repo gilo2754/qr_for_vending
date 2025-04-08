@@ -46,6 +46,12 @@ class QRCodeBase(BaseModel):
             return datetime.combine(v, datetime.min.time())
         return v
 
+    @validator('value')
+    def validate_value(cls, v):
+        if v < 0:
+            raise ValueError("El valor del código QR no puede ser negativo")
+        return v
+
 class QRCodeCreate(QRCodeBase):
     pass
 
@@ -274,14 +280,15 @@ async def get_qr_data(
         if result[5]:  # If qr_image is not None
             qr_image_base64 = base64.b64encode(result[5]).decode('utf-8')
             
-        return QRCode(
-            qrcode_id=result[0],
-            value=float(result[1]),
-            state=result[2],
-            creation_date=result[3],
-            used_date=result[4],
-            qr_image=qr_image_base64
-        )
+        # Format the response with dollar sign
+        return {
+            "qrcode_id": result[0],
+            "value": f"${float(result[1]):.2f}",
+            "state": result[2],
+            "creation_date": result[3],
+            "used_date": result[4],
+            "qr_image": qr_image_base64
+        }
     except mysql.connector.Error as err:
         logging.error(f"Database error: {err}")
         raise HTTPException(status_code=500, detail="Error en la base de datos")
