@@ -141,6 +141,24 @@ async def create_qr_data(
     current_user: dict = Depends(check_admin_role)  # Solo administradores pueden crear QR
 ):
     """Create a new QR code entry."""
+    if not current_user or current_user.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo los administradores pueden crear códigos QR"
+        )
+
+    if qr_data.value <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El valor del código QR debe ser mayor que 0"
+        )
+
+    if qr_data.creation_date > datetime.now():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La fecha de creación no puede ser futura"
+        )
+
     db = None
     cursor = None
     try:
@@ -166,7 +184,10 @@ async def create_qr_data(
                 logging.info(f"QR image decoded successfully, size: {len(qr_image_binary)} bytes")
             except Exception as e:
                 logging.error(f"Error decoding QR image: {e}")
-                # Continue without the image if there's an error
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Error al decodificar la imagen QR"
+                )
 
         # Insert the QR code data with the image
         query = 'INSERT INTO qr_codes (qrcode_id, value, state, creation_date, qr_image) VALUES (%s, %s, %s, %s, %s)'
@@ -178,6 +199,12 @@ async def create_qr_data(
         # Fetch the created record
         cursor.execute('SELECT * FROM qr_codes WHERE qrcode_id = %s', (qrcode_id,))
         result = cursor.fetchone()
+        
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error al recuperar el código QR creado"
+            )
         
         # Convert binary image back to base64 for response
         qr_image_base64 = None
@@ -194,11 +221,20 @@ async def create_qr_data(
         )
     except mysql.connector.Error as err:
         logging.error(f"Database error: {err}")
-        raise HTTPException(status_code=500, detail="Error en la base de datos")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error en la base de datos"
+        )
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error inesperado al crear el código QR"
+        )
     finally:
         if cursor:
             cursor.close()
-        if db and db.is_connected():
+        if db:
             db.close()
 
 @app.get("/api/qrdata/{qrcode_id}", response_model=QRCode)
