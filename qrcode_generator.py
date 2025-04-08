@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +20,7 @@ from auth import (
     check_admin_role,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
+from pydantic import validator
 
 # Load environment variables
 load_dotenv()
@@ -36,6 +37,14 @@ class QRCodeBase(BaseModel):
     state: str = Field(..., description="State of the QR code")
     creation_date: datetime = Field(..., description="Creation date of the QR code")
     qr_image: Optional[str] = Field(None, description="Base64 encoded QR image")
+
+    @validator('creation_date', pre=True)
+    def parse_creation_date(cls, v):
+        if isinstance(v, datetime):
+            return v
+        if isinstance(v, date):
+            return datetime.combine(v, datetime.min.time())
+        return v
 
 class QRCodeCreate(QRCodeBase):
     pass
@@ -153,7 +162,11 @@ async def create_qr_data(
             detail="El valor del código QR debe ser mayor que 0"
         )
 
-    if qr_data.creation_date > datetime.now():
+    # Convert both to naive datetimes for comparison
+    now = datetime.now().replace(tzinfo=None)
+    creation_date = qr_data.creation_date.replace(tzinfo=None)
+    
+    if creation_date > now:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="La fecha de creación no puede ser futura"
