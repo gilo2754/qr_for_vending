@@ -37,8 +37,25 @@ class QRCodeBase(BaseModel):
             raise ValueError("El valor del código QR no puede ser negativo")
         return v
 
-class QRCodeCreate(QRCodeBase):
-    pass
+class QRCodeCreate(BaseModel):
+    value: float = Field(..., description="Value of the QR code")
+    state: str = Field(..., description="State of the QR code")
+    creation_date: datetime = Field(..., description="Creation date of the QR code")
+    qr_image: Optional[str] = Field(None, description="Base64 encoded QR image")
+
+    @validator('creation_date', pre=True)
+    def parse_creation_date(cls, v):
+        if isinstance(v, datetime):
+            return v
+        if isinstance(v, date):
+            return datetime.combine(v, datetime.min.time())
+        return v
+
+    @validator('value')
+    def validate_value(cls, v):
+        if v < 0:
+            raise ValueError("El valor del código QR no puede ser negativo")
+        return v
 
 class QRCode(QRCodeBase):
     qrcode_id: str
@@ -250,4 +267,96 @@ async def exchange_qr(qrcode_id: str):
             raise HTTPException(status_code=400, detail="QR code cannot be exchanged")
     finally:
         cursor.close()
-        db.close() 
+        db.close()
+
+@router.put("/qrdata/{qrcode_id}", response_model=QRCode)
+async def update_qr_data(
+    qrcode_id: str,
+    qr_data: QRCodeBase,
+    current_user: dict = Depends(check_admin_role)
+):
+    """Update QR code information."""
+    if qr_data.value <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El valor del código QR debe ser mayor que 0"
+        )
+
+    # Convert both to naive datetimes for comparison
+    now = datetime.now().replace(tzinfo=None)
+    creation_date = qr_data.creation_date.replace(tzinfo=None)
+    
+    if creation_date > now:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La fecha de creación no puede ser futura"
+        )
+
+    db = None
+    cursor = None
+    try:
+        db = mysql.connector.connect(**Config.DB_CONFIG)
+        cursor = db.cursor()
+
+        # Check if QR code exists
+        cursor.execute('SELECT 1 FROM qr_codes WHERE qrcode_id = %s', (qrcode_id,))
+        if cursor.fetchone() is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Código QR no encontrado"
+            )
+
+        # Convert base64 image to binary if provided
+        qr_image_binary = None
+        if qr_data.qr_image:
+            if ',' in qr_data.qr_image:
+                qr_data.qr_image = qr_data.qr_image.split(',')[1]
+            try:
+                qr_image_binary = base64.b64decode(qr_data.qr_image)
+            except Exception as e:
+                logger.error(f"Error decoding QR image: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Error al decodificar la imagen QR"
+                )
+
+        # Update the QR code data
+        query = 'UPDATE qr_codes SET value = %s, state = %s, creation_date = %s, qr_image = %s WHERE qrcode_id = %s'
+        values = (qr_data.value, qr_data.state, qr_data.creation_date, qr_image_binary, qrcode_id)
+        cursor.execute(query, values)
+        db.commit()
+
+        # Fetch the updated record
+        cursor.execute('SELECT * FROM qr_codes WHERE qrcode_id = %s', (qrcode_id,))
+        result = cursor.fetchone()
+        
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error al recuperar el código QR actualizado"
+            )
+        
+        # Convert binary image back to base64 for response
+        qr_image_base64 = None
+        if result[5]:  # If qr_image is not None
+            qr_image_base64 = base64.b64encode(result[5]).decode('utf-8')
+        
+        return QRCode(
+            qrcode_id=result[0],
+            value=float(result[1]),
+            state=result[2],
+            creation_date=result[3],
+            used_date=result[4],
+            qr_image=qr_image_base64
+        )
+    except mysql.connector.Error as err:
+        logger.error(f"Database error: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error en la base de datos"
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if db:
+            db.close() 
