@@ -40,7 +40,7 @@ services:
     restart: unless-stopped
 
   mysql-backup:
-    image: alpine:latest
+    image: mysql:8
     container_name: mysql-backup
     volumes:
       - ./backups:/backups
@@ -52,7 +52,8 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
-    command: sh -c "while true; do sleep 300; /scripts/backup-mysql.sh; done"
+    entrypoint: []
+    command: sh -c "chmod +x /scripts/backup-mysql.sh && while true; do sleep 300; /scripts/backup-mysql.sh; done"
     networks:
       - qr-network
     depends_on:
