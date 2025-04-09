@@ -20,9 +20,54 @@
         .logout-button:hover {
             background-color: #c82333;
         }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            margin-bottom: 2rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-info span {
+            font-size: 1rem;
+            color: #333;
+        }
+
+        #userRole {
+            color: #666;
+            font-style: italic;
+        }
+
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
     </style>
 </head>
 <body>
+    <div class="header">
+        <h1>Generador de Códigos QR</h1>
+        <div class="user-info">
+            <span id="userFullName"></span>
+            <span id="userRole"></span>
+            <button onclick="logout()" class="logout-btn">Cerrar Sesión</button>
+        </div>
+    </div>
     <button class="logout-button" onclick="logout()">Cerrar Sesión</button>
     <h1>Generador de Códigos QR WP</h1>
     
@@ -170,12 +215,23 @@
                 window.location.href = '/login.html';
                 return;
             }
+            displayUserInfo();
         }
 
         // Función para cerrar sesión
         function logout() {
             localStorage.removeItem('access_token');
+            localStorage.removeItem('user_full_name');
+            localStorage.removeItem('user_role');
             window.location.href = '/login.html';
+        }
+
+        // Función para mostrar información del usuario
+        function displayUserInfo() {
+            const fullName = localStorage.getItem('user_full_name');
+            const role = localStorage.getItem('user_role');
+            document.getElementById('userFullName').textContent = fullName;
+            document.getElementById('userRole').textContent = `(${role})`;
         }
 
         // Función para obtener el token de autenticación
@@ -497,7 +553,7 @@
             loadQRCodes();
         }
 
-        // Verificar autenticación al cargar la página
+        // Llamar a checkAuth al cargar la página
         checkAuth();
     </script>
 </body>

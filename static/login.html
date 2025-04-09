@@ -202,6 +202,8 @@
                 if (response.ok) {
                     const data = await response.json();
                     localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('user_full_name', data.full_name);
+                    localStorage.setItem('user_role', data.role);
                     window.location.href = '/';
                 } else {
                     errorMessage.textContent = 'Usuario o contraseña incorrectos';
