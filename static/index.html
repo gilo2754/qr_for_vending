@@ -511,7 +511,7 @@
                         <h3>${qr.qrcode_id}</h3>
                         <div class="qr-info"><strong>Valor:</strong> $${qr.value}</div>
                         <div class="qr-info"><strong>Estado:</strong> <span class="qr-state state-${qr.state}">${qr.state}</span></div>
-                        <div class="qr-info"><strong>Fecha de creación:</strong> ${new Date(qr.creation_date).toLocaleDateString()}</div>
+                        <div class="qr-info"><strong>Fecha de creación:</strong> ${formatDateToElSalvador(qr.creation_date)}</div>
                         ${qr.used_date ? `<div class="qr-info"><strong>Fecha de canje:</strong> ${formatDateToElSalvador(qr.used_date)}</div>` : 'Aún no canjeado'}
                     `;
                     
@@ -557,22 +557,33 @@
 
         // Función para formatear la fecha a la zona horaria de El Salvador (UTC-6)
         function formatDateToElSalvador(dateString) {
-            const date = new Date(dateString);
-            
-            // Ajustar a la zona horaria de El Salvador (UTC-6)
-            const elSalvadorDate = new Date(date.getTime() - (6 * 60 * 60 * 1000));
-            
-            // Formatear la fecha y hora
-            const options = { 
-                year: 'numeric', 
-                month: '2-digit', 
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-            };
-            
-            return elSalvadorDate.toLocaleString('es-SV', options);
+            try {
+                // Crear un objeto de fecha a partir de la cadena
+                const date = new Date(dateString);
+                
+                // Verificar si la fecha es válida
+                if (isNaN(date.getTime())) {
+                    console.error('Fecha inválida:', dateString);
+                    return 'Fecha inválida';
+                }
+                
+                // Crear un formateador para la zona horaria de El Salvador
+                const formatter = new Intl.DateTimeFormat('es-SV', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                    timeZone: 'America/El_Salvador'
+                });
+                
+                // Formatear la fecha
+                return formatter.format(date);
+            } catch (error) {
+                console.error('Error al formatear la fecha:', error);
+                return dateString; // Devolver la cadena original en caso de error
+            }
         }
     </script>
 </body>
