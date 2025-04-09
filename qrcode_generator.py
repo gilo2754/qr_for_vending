@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, validator
 import mysql.connector
 import random
 import string
@@ -21,7 +21,6 @@ from auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     get_password_hash
 )
-from pydantic import validator
 
 # Load environment variables
 load_dotenv()
@@ -395,9 +394,15 @@ async def exchange_qr(qrcode_id: str):
 # Modelo para registro de usuarios
 class UserRegister(BaseModel):
     username: str
-    email: EmailStr
+    email: str
     full_name: str
     password: str
+    
+    @validator('email')
+    def validate_email(cls, v):
+        if '@' not in v or '.' not in v:
+            raise ValueError('Email inválido')
+        return v
 
 @app.post("/api/register")
 async def register_user(user_data: UserRegister):
