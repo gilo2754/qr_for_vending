@@ -25,4 +25,4 @@ COPY . .
 EXPOSE 3000
 
 # Command to run the application
-CMD ["python", "qrcode_generator.py"]
+CMD ["python", "qrcode_generator.py"] 
