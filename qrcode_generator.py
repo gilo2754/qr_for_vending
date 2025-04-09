@@ -364,8 +364,9 @@ async def get_all_qrcodes(
             db.close()
 
 @app.put("/api/qrdata/exchange/{qrcode_id}")
-async def exchange_qr(qrcode_id: str, db: mysql.connector.MySQLConnection = Depends(get_db)):
+async def exchange_qr(qrcode_id: str):
     """Exchange a QR code."""
+    db = mysql.connector.connect(**DB_CONFIG)
     cursor = db.cursor()
     try:
         # Check QR code status and value
@@ -388,6 +389,7 @@ async def exchange_qr(qrcode_id: str, db: mysql.connector.MySQLConnection = Depe
             raise HTTPException(status_code=400, detail="QR code cannot be exchanged")
     finally:
         cursor.close()
+        db.close()
 
 if __name__ == "__main__":
     import uvicorn

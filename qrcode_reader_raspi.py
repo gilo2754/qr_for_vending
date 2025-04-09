@@ -43,7 +43,7 @@ def leer_qr_desde_lector_usb():
                     print(f"Generando {pulsos} pulsos para el QR {datos}")
 
                     # Actualizar el estado y el valor del QR
-                    url_put = f"{Config.API_URL}/api/qrdata/canjear/{datos}"
+                    url_put = f"{Config.API_URL}/api/qrdata/exchange/{datos}"
                     respuesta_put = requests.put(url_put)
                     respuesta_put.raise_for_status()
                     print(f"QR {datos} actualizado a 'usado' y valor a 0")
