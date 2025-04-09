@@ -35,8 +35,8 @@ def leer_qr_desde_lector_usb():
                 info_qr = respuesta_get.json()
                 print("Información del QR:", info_qr)
 
-                valor_qr = info_qr.get('valor', 0)
-                estado_qr = info_qr.get('estado', '')
+                valor_qr = info_qr.get('value', 0)
+                estado_qr = info_qr.get('state', '')
 
                 if valor_qr >= Config.QR_MIN_VALUE and estado_qr == 'valido':
                     pulsos = int(valor_qr / Config.QR_MIN_VALUE)
