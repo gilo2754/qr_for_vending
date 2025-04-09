@@ -5,7 +5,9 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 import os
+import mysql.connector
 from dotenv import load_dotenv
+import logging
 
 # Cargar variables de entorno
 load_dotenv()
@@ -13,7 +15,7 @@ load_dotenv()
 # Configuración de seguridad
 SECRET_KEY = os.getenv("SECRET_KEY", "tu_clave_secreta_muy_segura_cambiar_en_produccion")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
 # Configuración de hash de contraseñas
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -21,25 +23,32 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # Esquema OAuth2 para tokens
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# Usuarios de prueba (en producción, esto debería estar en la base de datos)
-USERS_DB = {
-    "admin": {
-        "username": "admin",
-        "full_name": "Administrador",
-        "email": "admin@example.com",
-        "hashed_password": pwd_context.hash("admin123"),
-        "disabled": False,
-        "role": "admin"
-    },
-    "user": {
-        "username": "user",
-        "full_name": "Usuario Normal",
-        "email": "user@example.com",
-        "hashed_password": pwd_context.hash("user123"),
-        "disabled": False,
-        "role": "user"
-    }
+# Configuración de la base de datos
+DB_CONFIG = {
+    "host": os.getenv("DB_HOST"),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "database": os.getenv("DB_NAME")
 }
+
+# Configuración de logging
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO"),
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+def get_db():
+    """Obtiene una conexión a la base de datos"""
+    connection = None
+    try:
+        connection = mysql.connector.connect(**DB_CONFIG)
+        return connection
+    except mysql.connector.Error as err:
+        logging.error(f"Database connection error: {err}")
+        raise HTTPException(
+            status_code=500,
+            detail="Error de conexión a la base de datos"
+        )
 
 def verify_password(plain_password, hashed_password):
     """Verifica si la contraseña coincide con el hash"""
@@ -50,11 +59,29 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 def get_user(username: str):
-    """Obtiene un usuario por su nombre de usuario"""
-    if username in USERS_DB:
-        user_dict = USERS_DB[username]
-        return user_dict
-    return None
+    """Obtiene un usuario por su nombre de usuario desde la base de datos"""
+    db = get_db()
+    cursor = db.cursor(dictionary=True)
+    try:
+        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+        user = cursor.fetchone()
+        if user:
+            # Convertir el usuario a un diccionario con los campos necesarios
+            return {
+                "username": user["username"],
+                "full_name": user["full_name"],
+                "email": user["email"],
+                "hashed_password": user["password_hash"],
+                "disabled": not user["is_active"],
+                "role": user["role"]
+            }
+        return None
+    except mysql.connector.Error as err:
+        logging.error(f"Database error: {err}")
+        return None
+    finally:
+        cursor.close()
+        db.close()
 
 def authenticate_user(username: str, password: str):
     """Autentica un usuario con su nombre de usuario y contraseña"""
@@ -63,6 +90,22 @@ def authenticate_user(username: str, password: str):
         return False
     if not verify_password(password, user["hashed_password"]):
         return False
+    
+    # Actualizar último login
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute(
+            "UPDATE users SET last_login = NOW() WHERE username = %s",
+            (username,)
+        )
+        db.commit()
+    except mysql.connector.Error as err:
+        logging.error(f"Error updating last_login: {err}")
+    finally:
+        cursor.close()
+        db.close()
+    
     return user
 
 def create_access_token(data: Dict[str, Any], expires_delta: Optional[timedelta] = None):
