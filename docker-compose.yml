@@ -44,16 +44,30 @@ services:
     container_name: mysql-backup
     volumes:
       - ./backups:/backups
-      - ./scripts:/scripts
       - mysql_data:/var/lib/mysql:ro
-      - ./.env:/scripts/.env:ro
     environment:
       - DB_HOST=${DB_HOST}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
     entrypoint: []
-    command: sh -c "chmod +x /scripts/backup-mysql.sh && while true; do sleep 300; /scripts/backup-mysql.sh; done"
+    command: >
+      sh -c '
+      while true; do
+        echo "Starting backup process at $(date)"
+        TIMESTAMP=$$(date +%Y%m%d-%H%M)
+        BACKUP_FILE="${DB_NAME}_$${TIMESTAMP}.sql.gz"
+        echo "Creating MySQL backup..."
+        if mysqldump -h "${DB_HOST}" -u "${DB_USER}" -p"${DB_PASSWORD}" "${DB_NAME}" | gzip > "/backups/$${BACKUP_FILE}"; then
+          echo "Backup created successfully: $${BACKUP_FILE}"
+          echo "Cleaning up old backups..."
+          ls -t /backups/${DB_NAME}_*.sql.gz | tail -n +8 | xargs -r rm
+          echo "Backup process completed successfully at $(date)"
+        else
+          echo "Error: Failed to create backup"
+        fi
+        sleep 300
+      done'
     networks:
       - qr-network
     depends_on:
