@@ -14,10 +14,10 @@ class Config:
 
     # Database Configuration
     DB_CONFIG = {
-        'host': os.getenv('DB_HOST', 'localhost'),
-        'user': os.getenv('DB_USER', 'gilo'),
-        'password': os.getenv('DB_PASSWORD', 'adminadmin'),
-        'database': os.getenv('DB_NAME', 'waterDB')
+        'host': os.getenv('DB_HOST'),
+        'user': os.getenv('DB_USER'),
+        'password': os.getenv('DB_PASSWORD'),
+        'database': os.getenv('DB_NAME')
     }
 
     # QR Code Configuration
@@ -28,6 +28,9 @@ class Config:
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', '*').split(',')
     RATE_LIMIT = int(os.getenv('RATE_LIMIT', '100'))
     RATE_LIMIT_PERIOD = timedelta(minutes=int(os.getenv('RATE_LIMIT_PERIOD', '1')))
+    SECRET_KEY = os.getenv("SECRET_KEY", "tu_clave_secreta_muy_segura_cambiar_en_produccion")
+    ALGORITHM = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
     # Logging Configuration
     LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')

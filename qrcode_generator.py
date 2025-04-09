@@ -13,7 +13,7 @@ import os
 import base64
 from dotenv import load_dotenv
 from fastapi.security import OAuth2PasswordRequestForm
-from auth import (
+from api.auth import (
     authenticate_user,
     create_access_token,
     get_current_active_user,
@@ -21,6 +21,7 @@ from auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
     get_password_hash
 )
+from api.qr import router as qr_router
 
 # Load environment variables
 load_dotenv()
@@ -80,6 +81,9 @@ app.add_middleware(
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Include QR router
+app.include_router(qr_router, prefix="/api")
 
 # Ruta de autenticación
 @app.post("/token")
