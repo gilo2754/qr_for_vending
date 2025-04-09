@@ -512,7 +512,7 @@
                         <div class="qr-info"><strong>Valor:</strong> $${qr.value}</div>
                         <div class="qr-info"><strong>Estado:</strong> <span class="qr-state state-${qr.state}">${qr.state}</span></div>
                         <div class="qr-info"><strong>Fecha de creación:</strong> ${new Date(qr.creation_date).toLocaleDateString()}</div>
-                        ${qr.used_date ? `<div class="qr-info"><strong>Fecha de canje:</strong> ${new Date(qr.used_date).toLocaleString()}</div>` :  'Aún no canjeado'}
+                        ${qr.used_date ? `<div class="qr-info"><strong>Fecha de canje:</strong> ${formatDateToElSalvador(qr.used_date)}</div>` : 'Aún no canjeado'}
                     `;
                     
                     // Añadir la imagen QR si está disponible
@@ -554,6 +554,26 @@
 
         // Llamar a checkAuth al cargar la página
         checkAuth();
+
+        // Función para formatear la fecha a la zona horaria de El Salvador (UTC-6)
+        function formatDateToElSalvador(dateString) {
+            const date = new Date(dateString);
+            
+            // Ajustar a la zona horaria de El Salvador (UTC-6)
+            const elSalvadorDate = new Date(date.getTime() - (6 * 60 * 60 * 1000));
+            
+            // Formatear la fecha y hora
+            const options = { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            };
+            
+            return elSalvadorDate.toLocaleString('es-SV', options);
+        }
     </script>
 </body>
 </html>
