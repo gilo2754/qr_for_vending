@@ -29,7 +29,7 @@ def leer_qr_desde_lector_usb():
 
             try:
                 # Obtener información del QR
-                url_get = f"{Config.API_URL}/api/qrdata/{datos}"
+                url_get = f"{Config.API_URL}/api/qrdata/exchange/{datos}"
                 respuesta_get = requests.get(url_get)
                 respuesta_get.raise_for_status()
                 info_qr = respuesta_get.json()
