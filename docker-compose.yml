@@ -51,7 +51,7 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
-    command: sh -c "while true; do sleep 3600; /scripts/backup.sh; done"
+    command: sh -c "while true; do sleep 300; /scripts/backup.sh; done"
     networks:
       - qr-network
     depends_on:

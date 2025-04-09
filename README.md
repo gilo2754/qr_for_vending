@@ -32,7 +32,7 @@ The API will be available at http://localhost:3000
 ## Automatic Backups
 
 The application includes an automatic backup system that:
-- Creates daily database backups at 3 AM
+- Creates database backups every 5 minutes
 - Compresses backups using gzip
 - Uploads backups to Google Drive
 - Maintains a 7-day retention policy
