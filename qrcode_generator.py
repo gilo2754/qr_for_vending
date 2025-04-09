@@ -397,11 +397,18 @@ class UserRegister(BaseModel):
     email: str
     full_name: str
     password: str
+    role: str = "user"  # Valor por defecto es "user"
     
     @validator('email')
     def validate_email(cls, v):
         if '@' not in v or '.' not in v:
             raise ValueError('Email inválido')
+        return v
+    
+    @validator('role')
+    def validate_role(cls, v):
+        if v not in ["admin", "user"]:
+            raise ValueError('Rol inválido. Debe ser "admin" o "user"')
         return v
 
 @app.post("/api/register")
@@ -429,7 +436,7 @@ async def register_user(user_data: UserRegister):
         # Insertar el nuevo usuario
         cursor.execute(
             'INSERT INTO users (username, email, full_name, password_hash, role) VALUES (%s, %s, %s, %s, %s)',
-            (user_data.username, user_data.email, user_data.full_name, hashed_password, 'user')
+            (user_data.username, user_data.email, user_data.full_name, hashed_password, user_data.role)
         )
         db.commit()
         
