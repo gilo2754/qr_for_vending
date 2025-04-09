@@ -391,6 +391,33 @@ async def exchange_qr(qrcode_id: str):
         cursor.close()
         db.close()
 
+@app.get("/api/users")
+async def list_users():
+    """List all users in the system."""
+    db = mysql.connector.connect(**DB_CONFIG)
+    cursor = db.cursor(dictionary=True)
+    try:
+        # Get all users excluding password_hash
+        cursor.execute('''
+            SELECT user_id, username, email, full_name, role, 
+                   created_at, last_login, is_active 
+            FROM users
+            ORDER BY created_at DESC
+        ''')
+        users = cursor.fetchall()
+        return {"users": users}
+    except mysql.connector.Error as err:
+        logging.error(f"Error de base de datos: {err}")
+        raise HTTPException(status_code=500, detail=f"Error de base de datos: {str(err)}")
+    except Exception as e:
+        logging.error(f"Error al obtener usuarios: {e}")
+        raise HTTPException(status_code=500, detail=f"Error al cargar los usuarios: {str(e)}")
+    finally:
+        if cursor:
+            cursor.close()
+        if db and db.is_connected():
+            db.close()
+
 # Modelo para registro de usuarios
 class UserRegister(BaseModel):
     username: str
