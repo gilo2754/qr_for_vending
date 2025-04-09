@@ -243,10 +243,13 @@ async def get_all_qrcodes(
 
 @router.put("/qrdata/exchange/{qrcode_id}")
 async def exchange_qr(qrcode_id: str):
-    """Exchange a QR code."""
-    db = mysql.connector.connect(**Config.DB_CONFIG)
-    cursor = db.cursor()
+    """Exchange a QR code. This endpoint is public and does not require authentication."""
+    db = None
+    cursor = None
     try:
+        db = mysql.connector.connect(**Config.DB_CONFIG)
+        cursor = db.cursor()
+        
         # Check QR code status and value
         cursor.execute('SELECT state, value FROM qr_codes WHERE qrcode_id = %s', (qrcode_id,))
         result = cursor.fetchone()
@@ -265,9 +268,17 @@ async def exchange_qr(qrcode_id: str):
             return {"status": "success", "message": "QR code exchanged successfully"}
         else:
             raise HTTPException(status_code=400, detail="QR code cannot be exchanged")
+    except mysql.connector.Error as err:
+        logger.error(f"Database error: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error en la base de datos"
+        )
     finally:
-        cursor.close()
-        db.close()
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
 
 @router.put("/qrdata/{qrcode_id}", response_model=QRCode)
 async def update_qr_data(
