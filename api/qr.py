@@ -167,16 +167,21 @@ async def create_qr_data(
         if db:
             db.close()
 
-@router.get("/qrdata/{qrcode_id}", response_model=QRCode)
-async def get_qr_data(qrcode_id: str):
+@router.get("/qrdata/{qrcode_id}")
+async def get_qr_data(
+    qrcode_id: str,
+    fields: str = None
+):
     """
     Obtiene la información de un código QR por su ID.
     
     Endpoint público para consultar el estado y valor de un QR.
     - Endpoint: GET /api/qrdata/{qrcode_id}
     - Auth: No
-    - Params: qrcode_id
-    - Response: QRCode
+    - Params: 
+        - qrcode_id: ID del código QR
+        - fields: Campos a devolver (separados por comas). Ej: "value,state"
+    - Response: QRCode (campos solicitados)
     """
     db = None
     cursor = None
@@ -184,25 +189,52 @@ async def get_qr_data(qrcode_id: str):
         db = mysql.connector.connect(**Config.DB_CONFIG)
         cursor = db.cursor()
         
-        cursor.execute('SELECT * FROM qr_codes WHERE qrcode_id = %s', (qrcode_id,))
+        # Si se especifican campos, solo seleccionamos esos
+        if fields:
+            requested_fields = fields.split(',')
+            valid_fields = {'qrcode_id', 'value', 'state', 'creation_date', 'used_date', 'qr_image'}
+            # Validar que los campos solicitados sean válidos
+            if not all(field in valid_fields for field in requested_fields):
+                raise HTTPException(
+                    status_code=400,
+                    detail="Campos inválidos. Los campos válidos son: qrcode_id, value, state, creation_date, used_date, qr_image"
+                )
+            # Siempre incluir qrcode_id
+            if 'qrcode_id' not in requested_fields:
+                requested_fields.append('qrcode_id')
+            # Construir la consulta SQL
+            fields_sql = ', '.join(requested_fields)
+            cursor.execute(f'SELECT {fields_sql} FROM qr_codes WHERE qrcode_id = %s', (qrcode_id,))
+        else:
+            cursor.execute('SELECT * FROM qr_codes WHERE qrcode_id = %s', (qrcode_id,))
+        
         result = cursor.fetchone()
         
         if not result:
             raise HTTPException(status_code=404, detail="Código QR no encontrado")
         
-        # Convert binary image back to base64 for response
-        qr_image_base64 = None
-        if result[5]:  # If qr_image is not None
-            qr_image_base64 = base64.b64encode(result[5]).decode('utf-8')
-            
-        return QRCode(
-            qrcode_id=result[0],
-            value=float(result[1]),
-            state=result[2],
-            creation_date=result[3],
-            used_date=result[4],
-            qr_image=qr_image_base64
-        )
+        # Construir la respuesta con los campos solicitados
+        response = {}
+        if fields:
+            for i, field in enumerate(requested_fields):
+                if field == 'qr_image' and result[i] is not None:
+                    response[field] = base64.b64encode(result[i]).decode('utf-8')
+                elif field == 'value':
+                    response[field] = float(result[i])
+                else:
+                    response[field] = result[i]
+        else:
+            # Si no se especifican campos, devolver todo
+            response = {
+                'qrcode_id': result[0],
+                'value': float(result[1]),
+                'state': result[2],
+                'creation_date': result[3],
+                'used_date': result[4],
+                'qr_image': base64.b64encode(result[5]).decode('utf-8') if result[5] else None
+            }
+        
+        return response
     except mysql.connector.Error as err:
         logger.error(f"Database error: {err}")
         raise HTTPException(status_code=500, detail="Error en la base de datos")

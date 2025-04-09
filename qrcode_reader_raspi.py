@@ -28,9 +28,9 @@ def leer_qr_desde_lector_usb():
             print("Código QR leído:", datos)
 
             try:
-                # Obtener información del QR
-                url_get = f"{Config.API_URL}/api/qrdata/exchange/{datos}"
-                respuesta_get = requests.get(url_get)
+                # Obtener información del QR (solo value y state)
+                url_get_info_qr = f"{Config.API_URL}/api/qrdata/{datos}?fields=value,state"
+                respuesta_get = requests.get(url_get_info_qr)
                 respuesta_get.raise_for_status()
                 info_qr = respuesta_get.json()
                 print("Información del QR:", info_qr)
@@ -43,8 +43,8 @@ def leer_qr_desde_lector_usb():
                     print(f"Generando {pulsos} pulsos para el QR {datos}")
 
                     # Actualizar el estado y el valor del QR
-                    url_put = f"{Config.API_URL}/api/qrdata/exchange/{datos}"
-                    respuesta_put = requests.put(url_put)
+                    url_exchange_qr = f"{Config.API_URL}/api/qrdata/exchange/{datos}"
+                    respuesta_put = requests.put(url_exchange_qr)
                     respuesta_put.raise_for_status()
                     print(f"QR {datos} actualizado a 'usado' y valor a 0")
                 else:
