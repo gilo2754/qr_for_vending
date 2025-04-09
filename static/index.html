@@ -181,6 +181,9 @@
         // Obtener la URL de la API del entorno
         const API_URL = window.location.origin;
         
+        // Variable para almacenar el offset de zona horaria
+        const TIMEZONE_OFFSET = -6; // El Salvador is UTC-6
+        
         // Función para cambiar entre pestañas
         function openTab(tabName) {
             // Ocultar todos los contenidos de pestañas
@@ -567,19 +570,20 @@
                     return 'Fecha inválida';
                 }
                 
-                // Crear un formateador para la zona horaria de El Salvador
-                const formatter = new Intl.DateTimeFormat('es-SV', {
-                    year: 'numeric',
-                    month: '2-digit',
+                // Restar 6 horas para ajustar a la zona horaria de El Salvador (TIMEZONE_OFFSET = -6)
+                const elSalvadorDate = new Date(date.getTime() - (TIMEZONE_OFFSET * 60 * 60 * 1000));
+                
+                // Formatear la fecha y hora
+                const options = { 
+                    year: 'numeric', 
+                    month: '2-digit', 
                     day: '2-digit',
                     hour: '2-digit',
                     minute: '2-digit',
-                    hour12: false,
-                    timeZone: 'America/El_Salvador'
-                });
+                    hour12: false
+                };
                 
-                // Formatear la fecha
-                return formatter.format(date);
+                return elSalvadorDate.toLocaleString('es-SV', options);
             } catch (error) {
                 console.error('Error al formatear la fecha:', error);
                 return dateString; // Devolver la cadena original en caso de error
