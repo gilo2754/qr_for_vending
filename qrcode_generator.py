@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 import mysql.connector
 import random
 import string
@@ -18,7 +18,8 @@ from auth import (
     create_access_token,
     get_current_active_user,
     check_admin_role,
-    ACCESS_TOKEN_EXPIRE_MINUTES
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    get_password_hash
 )
 from pydantic import validator
 
@@ -390,6 +391,55 @@ async def exchange_qr(qrcode_id: str):
     finally:
         cursor.close()
         db.close()
+
+# Modelo para registro de usuarios
+class UserRegister(BaseModel):
+    username: str
+    email: EmailStr
+    full_name: str
+    password: str
+
+@app.post("/api/register")
+async def register_user(user_data: UserRegister):
+    """Registra un nuevo usuario."""
+    db = None
+    cursor = None
+    try:
+        # Obtener conexión a la base de datos
+        db = mysql.connector.connect(**DB_CONFIG)
+        cursor = db.cursor()
+        
+        # Verificar si el usuario ya existe
+        cursor.execute('SELECT 1 FROM users WHERE username = %s OR email = %s', 
+                      (user_data.username, user_data.email))
+        if cursor.fetchone():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El usuario o email ya existe"
+            )
+        
+        # Generar hash de la contraseña
+        hashed_password = get_password_hash(user_data.password)
+        
+        # Insertar el nuevo usuario
+        cursor.execute(
+            'INSERT INTO users (username, email, full_name, password_hash, role) VALUES (%s, %s, %s, %s, %s)',
+            (user_data.username, user_data.email, user_data.full_name, hashed_password, 'user')
+        )
+        db.commit()
+        
+        return {"message": "Usuario registrado exitosamente"}
+    except mysql.connector.Error as err:
+        logging.error(f"Database error: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error en la base de datos"
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
 
 if __name__ == "__main__":
     import uvicorn

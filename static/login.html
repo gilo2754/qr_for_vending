@@ -16,7 +16,15 @@
             background-color: #f5f5f5;
         }
 
-        .login-container {
+        .container {
+            display: flex;
+            gap: 2rem;
+            max-width: 900px;
+            width: 100%;
+            padding: 1rem;
+        }
+
+        .login-container, .register-container {
             background-color: white;
             padding: 2rem;
             border-radius: 8px;
@@ -70,32 +78,107 @@
             text-align: center;
             display: none;
         }
+
+        .success-message {
+            color: #28a745;
+            margin-top: 1rem;
+            text-align: center;
+            display: none;
+        }
+
+        .toggle-form {
+            text-align: center;
+            margin-top: 1rem;
+            color: #007bff;
+            cursor: pointer;
+        }
+
+        .toggle-form:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <h1>Iniciar Sesión</h1>
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="username">Usuario:</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Contraseña:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit">Iniciar Sesión</button>
-        </form>
-        <div id="errorMessage" class="error-message"></div>
+    <div class="container">
+        <!-- Formulario de Login -->
+        <div class="login-container" id="loginSection">
+            <h1>Iniciar Sesión</h1>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Usuario:</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Contraseña:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit">Iniciar Sesión</button>
+            </form>
+            <div id="loginErrorMessage" class="error-message"></div>
+            <div class="toggle-form" onclick="toggleForms()">¿No tienes cuenta? Regístrate</div>
+        </div>
+
+        <!-- Formulario de Registro -->
+        <div class="register-container" id="registerSection" style="display: none;">
+            <h1>Registro</h1>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="regUsername">Usuario:</label>
+                    <input type="text" id="regUsername" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="regEmail">Email:</label>
+                    <input type="email" id="regEmail" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="regFullName">Nombre Completo:</label>
+                    <input type="text" id="regFullName" name="full_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Contraseña:</label>
+                    <input type="password" id="regPassword" name="password" required>
+                </div>
+                <div class="form-group">
+                    <label for="regConfirmPassword">Confirmar Contraseña:</label>
+                    <input type="password" id="regConfirmPassword" name="confirm_password" required>
+                </div>
+                <button type="submit">Registrarse</button>
+            </form>
+            <div id="registerErrorMessage" class="error-message"></div>
+            <div id="registerSuccessMessage" class="success-message"></div>
+            <div class="toggle-form" onclick="toggleForms()">¿Ya tienes cuenta? Inicia sesión</div>
+        </div>
     </div>
 
     <script>
+        // Función para alternar entre formularios
+        function toggleForms() {
+            const loginSection = document.getElementById('loginSection');
+            const registerSection = document.getElementById('registerSection');
+            
+            if (loginSection.style.display === 'none') {
+                loginSection.style.display = 'block';
+                registerSection.style.display = 'none';
+            } else {
+                loginSection.style.display = 'none';
+                registerSection.style.display = 'block';
+            }
+        }
+
+        // Manejar el formulario de login
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            const errorMessage = document.getElementById('errorMessage');
+            const errorMessage = document.getElementById('loginErrorMessage');
 
             try {
                 const response = await fetch('/token', {
@@ -115,6 +198,63 @@
                     window.location.href = '/';
                 } else {
                     errorMessage.textContent = 'Usuario o contraseña incorrectos';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                errorMessage.textContent = 'Error de conexión. Por favor, intente nuevamente.';
+                errorMessage.style.display = 'block';
+            }
+        });
+
+        // Manejar el formulario de registro
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('regUsername').value;
+            const email = document.getElementById('regEmail').value;
+            const fullName = document.getElementById('regFullName').value;
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+            const errorMessage = document.getElementById('registerErrorMessage');
+            const successMessage = document.getElementById('registerSuccessMessage');
+
+            // Ocultar mensajes anteriores
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+
+            // Validar que las contraseñas coincidan
+            if (password !== confirmPassword) {
+                errorMessage.textContent = 'Las contraseñas no coinciden';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        email: email,
+                        full_name: fullName,
+                        password: password
+                    })
+                });
+
+                if (response.ok) {
+                    successMessage.textContent = 'Registro exitoso. Ahora puedes iniciar sesión.';
+                    successMessage.style.display = 'block';
+                    document.getElementById('registerForm').reset();
+                    
+                    // Cambiar al formulario de login después de 2 segundos
+                    setTimeout(() => {
+                        toggleForms();
+                    }, 2000);
+                } else {
+                    const data = await response.json();
+                    errorMessage.textContent = data.detail || 'Error en el registro. Por favor, intente nuevamente.';
                     errorMessage.style.display = 'block';
                 }
             } catch (error) {
