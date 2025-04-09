@@ -22,13 +22,14 @@ from api.auth import (
     get_password_hash
 )
 from api.qr import router as qr_router
+from config import Config
 
 # Load environment variables
 load_dotenv()
 
 # Configure logging
 logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO"),
+    level=os.getenv("LOG_LEVEL", "INFO").upper(),
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
@@ -130,19 +131,11 @@ async def login_page():
             content={"detail": "Error loading the login page"}
         )
 
-# Database configuration
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "localhost"),
-    "user": os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD", ""),
-    "database": os.getenv("DB_NAME", "waterDB")
-}
-
 # Database dependency
 def get_db():
     connection = None
     try:
-        connection = mysql.connector.connect(**DB_CONFIG)
+        connection = mysql.connector.connect(**Config.DB_CONFIG)
         yield connection
     except mysql.connector.Error as err:
         logging.error(f"Database connection error: {err}")
@@ -191,7 +184,7 @@ async def create_qr_data(
     cursor = None
     try:
         # Obtener conexión a la base de datos
-        db = mysql.connector.connect(**DB_CONFIG)
+        db = mysql.connector.connect(**Config.DB_CONFIG)
         cursor = db.cursor()
 
         # Generate unique qrcode_id
@@ -275,7 +268,7 @@ async def get_qr_data(
     cursor = None
     try:
         # Obtener conexión a la base de datos
-        db = mysql.connector.connect(**DB_CONFIG)
+        db = mysql.connector.connect(**Config.DB_CONFIG)
         cursor = db.cursor()
         
         cursor.execute('SELECT * FROM qr_codes WHERE qrcode_id = %s', (qrcode_id,))
@@ -319,7 +312,7 @@ async def get_all_qrcodes(
     cursor = None
     try:
         # Obtener conexión a la base de datos
-        db = mysql.connector.connect(**DB_CONFIG)
+        db = mysql.connector.connect(**Config.DB_CONFIG)
         cursor = db.cursor()
         
         # Verificar si la tabla existe
@@ -375,7 +368,7 @@ async def get_all_qrcodes(
 @app.put("/api/qrdata/exchange/{qrcode_id}")
 async def exchange_qr(qrcode_id: str):
     """Exchange a QR code."""
-    db = mysql.connector.connect(**DB_CONFIG)
+    db = mysql.connector.connect(**Config.DB_CONFIG)
     cursor = db.cursor()
     try:
         # Check QR code status and value
@@ -403,7 +396,7 @@ async def exchange_qr(qrcode_id: str):
 @app.get("/api/users")
 async def list_users():
     """List all users in the system."""
-    db = mysql.connector.connect(**DB_CONFIG)
+    db = mysql.connector.connect(**Config.DB_CONFIG)
     cursor = db.cursor(dictionary=True)
     try:
         # Get all users excluding password_hash
@@ -454,7 +447,7 @@ async def register_user(user_data: UserRegister):
     cursor = None
     try:
         # Obtener conexión a la base de datos
-        db = mysql.connector.connect(**DB_CONFIG)
+        db = mysql.connector.connect(**Config.DB_CONFIG)
         cursor = db.cursor()
         
         # Verificar si el usuario ya existe

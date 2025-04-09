@@ -8,28 +8,21 @@ import os
 import mysql.connector
 from dotenv import load_dotenv
 import logging
+from config import Config
 
 # Cargar variables de entorno
 load_dotenv()
 
 # Configuración de seguridad
-SECRET_KEY = os.getenv("SECRET_KEY", "tu_clave_secreta_muy_segura_cambiar_en_produccion")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+SECRET_KEY = Config.SECRET_KEY
+ALGORITHM = Config.ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = Config.ACCESS_TOKEN_EXPIRE_MINUTES
 
 # Configuración de hash de contraseñas
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Esquema OAuth2 para tokens
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-# Configuración de la base de datos
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST"),
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
-    "database": os.getenv("DB_NAME")
-}
 
 # Configuración de logging
 logging.basicConfig(
@@ -41,7 +34,7 @@ def get_db():
     """Obtiene una conexión a la base de datos"""
     connection = None
     try:
-        connection = mysql.connector.connect(**DB_CONFIG)
+        connection = mysql.connector.connect(**Config.DB_CONFIG)
         return connection
     except mysql.connector.Error as err:
         logging.error(f"Database connection error: {err}")
