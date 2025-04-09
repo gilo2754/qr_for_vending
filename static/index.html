@@ -512,7 +512,7 @@
                         <div class="qr-info"><strong>Valor:</strong> $${qr.value}</div>
                         <div class="qr-info"><strong>Estado:</strong> <span class="qr-state state-${qr.state}">${qr.state}</span></div>
                         <div class="qr-info"><strong>Fecha de creación:</strong> ${new Date(qr.creation_date).toLocaleDateString()}</div>
-                        ${qr.used_date ? `<div class="qr-info"><strong>Fecha de canje:</strong> ${new Date(qr.used_date).toLocaleDateString()}</div>` :  'Aún no canjeado'}
+                        ${qr.used_date ? `<div class="qr-info"><strong>Fecha de canje:</strong> ${new Date(qr.used_date).toLocaleString()}</div>` :  'Aún no canjeado'}
                     `;
                     
                     // Añadir la imagen QR si está disponible
