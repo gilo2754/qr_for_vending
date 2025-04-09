@@ -74,7 +74,15 @@ async def create_qr_data(
     qr_data: QRCodeCreate,
     current_user: dict = Depends(check_admin_role)
 ):
-    """Create a new QR code entry."""
+    """
+    Crea un nuevo código QR.
+    
+    Requiere autenticación de administrador.
+    - Endpoint: POST /api/qrdata
+    - Auth: Sí (admin)
+    - Request: QRCodeCreate (valor, estado, fecha_creacion, imagen_opcional)
+    - Response: QRCode
+    """
     if qr_data.value <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -160,11 +168,16 @@ async def create_qr_data(
             db.close()
 
 @router.get("/qrdata/{qrcode_id}", response_model=QRCode)
-async def get_qr_data(
-    qrcode_id: str,
-    current_user: dict = Depends(get_current_active_user)
-):
-    """Get QR code information by qrcode_id."""
+async def get_qr_data(qrcode_id: str):
+    """
+    Obtiene la información de un código QR por su ID.
+    
+    Endpoint público para consultar el estado y valor de un QR.
+    - Endpoint: GET /api/qrdata/{qrcode_id}
+    - Auth: No
+    - Params: qrcode_id
+    - Response: QRCode
+    """
     db = None
     cursor = None
     try:
@@ -205,7 +218,15 @@ async def get_all_qrcodes(
     skip: int = 0,
     limit: int = 100
 ):
-    """List all QR codes with pagination."""
+    """
+    Lista todos los códigos QR con paginación.
+    
+    Requiere autenticación de usuario.
+    - Endpoint: GET /api/qrcodes
+    - Auth: Sí (usuario)
+    - Params: skip (offset), limit (cantidad)
+    - Response: List[QRCode]
+    """
     db = None
     cursor = None
     try:
@@ -243,7 +264,20 @@ async def get_all_qrcodes(
 
 @router.put("/qrdata/exchange/{qrcode_id}")
 async def exchange_qr(qrcode_id: str):
-    """Exchange a QR code. This endpoint is public and does not require authentication."""
+    """
+    Canjea un código QR.
+    
+    Endpoint público para máquinas expendedoras.
+    - Endpoint: PUT /api/qrdata/exchange/{qrcode_id}
+    - Auth: No
+    - Params: qrcode_id
+    - Response: {"status": "success", "message": string} | HTTPException
+    - Estados posibles: 
+      * 200: Canjeado exitosamente
+      * 400: No se puede canjear (inválido/usado)
+      * 404: No encontrado
+      * 500: Error de base de datos
+    """
     db = None
     cursor = None
     try:
@@ -286,7 +320,16 @@ async def update_qr_data(
     qr_data: QRCodeBase,
     current_user: dict = Depends(check_admin_role)
 ):
-    """Update QR code information."""
+    """
+    Actualiza la información de un código QR.
+    
+    Requiere autenticación de administrador.
+    - Endpoint: PUT /api/qrdata/{qrcode_id}
+    - Auth: Sí (admin)
+    - Params: qrcode_id
+    - Request: QRCodeBase
+    - Response: QRCode
+    """
     if qr_data.value <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
