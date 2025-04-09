@@ -66,21 +66,21 @@ Once the server is running, you can access:
 - GET `/api/qrcodes` - List all QR codes (with pagination)
 - PUT `/api/qrdata/exchange/{qrcode_id}` - Exchange a QR code
 
-## Estados de los Códigos QR
+## QR Code States
 
-Los códigos QR pueden tener los siguientes estados:
+QR codes can have the following states:
 
-- **válido**: El código QR está activo y puede ser utilizado para realizar una compra en la máquina expendedora.
-- **enCirculación**: El código QR ha sido generado y está en manos de un usuario, pero aún no ha sido utilizado.
-- **usado**: El código QR ya ha sido canjeado por un producto en la máquina expendedora y no puede volver a utilizarse.
-- **expirado**: El código QR ha superado su fecha de validez y ya no puede ser utilizado.
-- **invalidado**: El código QR ha sido invalidado manualmente por alguna razón (por ejemplo, si se detecta un problema o fraude).
+- **válido**: The QR code is active and can be used to make a purchase in the vending machine.
+- **enCirculación**: The QR code has been generated and is in the hands of a user, but has not yet been used.
+- **usado**: The QR code has already been exchanged for a product in the vending machine and cannot be used again.
+- **expirado**: The QR code has exceeded its validity date and can no longer be used.
+- **invalidado**: The QR code has been manually invalidated for some reason (for example, if a problem or fraud is detected).
 
-Estos estados permiten:
-- Rastrear el ciclo de vida completo de un código QR
-- Prevenir el uso múltiple de un mismo código
-- Gestionar la validez temporal de los códigos
-- Responder a situaciones excepcionales
+These states allow:
+- Tracking the complete lifecycle of a QR code
+- Preventing multiple uses of the same code
+- Managing the temporal validity of codes
+- Responding to exceptional situations
 
 ## Development
 
@@ -146,3 +146,16 @@ See `.env.example` for the structure of the environment variables file.
 ## ESP32 Integration
 
 For ESP32-CAM setup and usage instructions, please refer to [ESP32_README.md](ESP32_README.md). 
+
+## End User Manual
+
+### Time Zone Notes
+
+It is important to note the difference between the time zones used in the application:
+
+- **GUI (User Interface)**: Displays dates and times in El Salvador's time zone (UTC-6).
+- **Database**: Stores dates and times in the local time zone of the server where the application is running (usually in the USA).
+
+This difference is intentional and is designed so that users in El Salvador see dates and times in their local time zone, while the database maintains a consistent record in the server's time zone.
+
+The conversion between time zones is performed automatically in the user interface through the `formatDateToElSalvador()` function, which adjusts dates and times to display them correctly in El Salvador's time zone. 
