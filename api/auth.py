@@ -1,14 +1,14 @@
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-import os
 import mysql.connector
 from dotenv import load_dotenv
-import logging
 from config import Config
+from api.utils import get_db
+from api.logger import logger
 
 # Cargar variables de entorno
 load_dotenv()
@@ -23,25 +23,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Esquema OAuth2 para tokens
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-# Configuración de logging
-logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO").upper(),
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-
-def get_db():
-    """Obtiene una conexión a la base de datos"""
-    connection = None
-    try:
-        connection = mysql.connector.connect(**Config.DB_CONFIG)
-        return connection
-    except mysql.connector.Error as err:
-        logging.error(f"Database connection error: {err}")
-        raise HTTPException(
-            status_code=500,
-            detail="Error de conexión a la base de datos"
-        )
 
 def verify_password(plain_password, hashed_password):
     """Verifica si la contraseña coincide con el hash"""
@@ -70,7 +51,7 @@ def get_user(username: str):
             }
         return None
     except mysql.connector.Error as err:
-        logging.error(f"Database error: {err}")
+        logger.error(f"Database error: {err}")
         return None
     finally:
         cursor.close()
@@ -94,7 +75,7 @@ def authenticate_user(username: str, password: str):
         )
         db.commit()
     except mysql.connector.Error as err:
-        logging.error(f"Error updating last_login: {err}")
+        logger.error(f"Error updating last_login: {err}")
     finally:
         cursor.close()
         db.close()

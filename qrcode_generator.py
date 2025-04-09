@@ -23,15 +23,11 @@ from api.auth import (
 )
 from api.qr import router as qr_router
 from config import Config
+from api.utils import get_db, get_db_dependency
+from api.logger import logger
 
 # Load environment variables
 load_dotenv()
-
-# Configure logging
-logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO").upper(),
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
 
 # Pydantic models for request/response validation
 class QRCodeBase(BaseModel):
@@ -130,22 +126,6 @@ async def login_page():
             status_code=500,
             content={"detail": "Error loading the login page"}
         )
-
-# Database dependency
-def get_db():
-    connection = None
-    try:
-        connection = mysql.connector.connect(**Config.DB_CONFIG)
-        yield connection
-    except mysql.connector.Error as err:
-        logging.error(f"Database connection error: {err}")
-        raise HTTPException(
-            status_code=500,
-            detail="Error de conexión a la base de datos. Por favor, verifique que el servidor MySQL esté ejecutándose."
-        )
-    finally:
-        if connection and connection.is_connected():
-            connection.close()
 
 def generate_qrcode_id(length: int = int(os.getenv("QR_SHORT_ID_LENGTH", "8"))) -> str:
     """Generate a unique QR code ID."""

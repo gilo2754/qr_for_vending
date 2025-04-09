@@ -10,12 +10,8 @@ import os
 import base64
 from config import Config
 from api.auth import check_admin_role, get_current_active_user
-
-# Configurar logging
-logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO").upper(),
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+from api.utils import get_db
+from api.logger import logger
 
 # Crear router
 router = APIRouter()
@@ -99,7 +95,7 @@ async def create_qr_data(
             try:
                 qr_image_binary = base64.b64decode(qr_data.qr_image)
             except Exception as e:
-                logging.error(f"Error decoding QR image: {e}")
+                logger.error(f"Error decoding QR image: {e}")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Error al decodificar la imagen QR"
@@ -135,7 +131,7 @@ async def create_qr_data(
             qr_image=qr_image_base64
         )
     except mysql.connector.Error as err:
-        logging.error(f"Database error: {err}")
+        logger.error(f"Database error: {err}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error en la base de datos"
@@ -178,7 +174,7 @@ async def get_qr_data(
             qr_image=qr_image_base64
         )
     except mysql.connector.Error as err:
-        logging.error(f"Database error: {err}")
+        logger.error(f"Database error: {err}")
         raise HTTPException(status_code=500, detail="Error en la base de datos")
     finally:
         if cursor:
@@ -220,7 +216,7 @@ async def get_all_qrcodes(
         
         return qr_codes
     except mysql.connector.Error as err:
-        logging.error(f"Database error: {err}")
+        logger.error(f"Database error: {err}")
         raise HTTPException(status_code=500, detail="Error en la base de datos")
     finally:
         if cursor:
