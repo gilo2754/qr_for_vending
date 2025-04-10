@@ -87,7 +87,8 @@ async function loadQRCodes() {
         qrCodes.forEach(qr => {
             const qrCard = QRCardComponent.createCard({
                 qrcode_id: qr.qrcode_id,
-                value: qr.value,
+                new_value: qr.new_value,
+                old_value: qr.old_value,
                 state: qr.state,
                 creation_date: qr.creation_date,
                 used_date: qr.used_date,
