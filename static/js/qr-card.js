@@ -2,7 +2,7 @@ class QRCardComponent {
     static createCard(qrData) {
         const { qrcode_id, new_value, old_value, state, creation_date, used_date, qr_image } = qrData;
         const qrCard = document.createElement('div');
-        qrCard.className = 'qr-card';
+        qrCard.className = 'qr-container';
         
         let cardContent = '';
 
