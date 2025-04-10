@@ -18,7 +18,7 @@ function formatDateToElSalvador(dateString) {
             minute: '2-digit',
             second: '2-digit',
             timeZone: 'America/El_Salvador'
-        }) + ' (UTC-8)';
+        }) + ' (UTC-6)';
     } catch (error) {
         console.error('Error al formatear la fecha:', error);
         return dateString;
