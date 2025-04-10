@@ -76,7 +76,7 @@
                 <div class="form-group">
                     <button onclick="obtenerInformacion()">Obtener Información</button>
                 </div>
-                <div id="informacionQR"></div>
+                <div id="informacionQR" class="qr-container"></div>
             </div>
         </div>
     </div>
@@ -358,7 +358,13 @@
                 const response = await fetch(`${API_URL}/api/qrdata/${qrcode_id}`, {
                     headers: {
                         'Authorization': `Bearer ${getAuthToken()}`
-                    }
+                    }, 
+                    body: JSON.stringify({
+                            new_value: parseFloat(valor),
+                            old_value: 0.0,
+                            creation_date: fechaCreacion + "T00:00:00.000Z",
+                            state: estado
+                        })
                 });
 
                 // Verificar si el código QR no fue encontrado
