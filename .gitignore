@@ -1,6 +1,21 @@
 # Environment variables
 .env
 .env.local
+.env.*
+*.env
+.env.dev
+.env.test
+.env.production
+.env.staging
+.env.backup
+.env.old
+.env.new
+.env.temp
+.env.tmp
+.env.bak
+.env.swp
+.env.master
+.env~
 
 # Python
 __pycache__/
