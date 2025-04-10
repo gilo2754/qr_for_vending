@@ -28,14 +28,14 @@ def leer_qr_desde_lector_usb():
             print("Código QR leído:", datos)
 
             try:
-                # Obtener información del QR (solo value y state)
-                url_get_info_qr = f"{Config.API_URL}/api/qrdata/{datos}?fields=value,state"
+                # Obtener información del QR (solo new_value y state)
+                url_get_info_qr = f"{Config.API_URL}/api/qrdata/{datos}?fields=new_value,state"
                 respuesta_get = requests.get(url_get_info_qr)
                 respuesta_get.raise_for_status()
                 info_qr = respuesta_get.json()
                 print("Información del QR:", info_qr)
 
-                valor_qr = info_qr.get('value', 0)
+                valor_qr = info_qr.get('new_value', 0)
                 estado_qr = info_qr.get('state', '')
 
                 if valor_qr >= Config.QR_MIN_VALUE and estado_qr == 'valido':

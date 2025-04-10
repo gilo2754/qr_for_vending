@@ -18,7 +18,8 @@ router = APIRouter()
 
 # Pydantic models for request/response validation
 class QRCodeBase(BaseModel):
-    value: float = Field(..., description="Value of the QR code")
+    new_value: float = Field(..., description="Current value of the QR code")
+    old_value: float = Field(0.0, description="Previous value of the QR code before being used/expired")
     state: str = Field(..., description="State of the QR code")
     creation_date: datetime = Field(..., description="Creation date of the QR code")
     qr_image: Optional[str] = Field(None, description="Base64 encoded QR image")
@@ -31,14 +32,15 @@ class QRCodeBase(BaseModel):
             return datetime.combine(v, datetime.min.time())
         return v
 
-    @validator('value')
-    def validate_value(cls, v):
+    @validator('new_value', 'old_value')
+    def validate_values(cls, v):
         if v < 0:
-            raise ValueError("El valor del código QR no puede ser negativo")
+            raise ValueError("Los valores del código QR no pueden ser negativos")
         return v
 
 class QRCodeCreate(BaseModel):
-    value: float = Field(..., description="Value of the QR code")
+    new_value: float = Field(..., description="Initial value of the QR code")
+    old_value: float = Field(0.0, description="Previous value of the QR code (usually 0 for new codes)")
     state: str = Field(..., description="State of the QR code")
     creation_date: datetime = Field(..., description="Creation date of the QR code")
     qr_image: Optional[str] = Field(None, description="Base64 encoded QR image")
@@ -51,10 +53,10 @@ class QRCodeCreate(BaseModel):
             return datetime.combine(v, datetime.min.time())
         return v
 
-    @validator('value')
-    def validate_value(cls, v):
+    @validator('new_value', 'old_value')
+    def validate_values(cls, v):
         if v < 0:
-            raise ValueError("El valor del código QR no puede ser negativo")
+            raise ValueError("Los valores del código QR no pueden ser negativos")
         return v
 
 class QRCode(QRCodeBase):
@@ -83,7 +85,7 @@ async def create_qr_data(
     - Request: QRCodeCreate (valor, estado, fecha_creacion, imagen_opcional)
     - Response: QRCode
     """
-    if qr_data.value <= 0:
+    if qr_data.new_value <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El valor del código QR debe ser mayor que 0"
@@ -127,8 +129,8 @@ async def create_qr_data(
                 )
 
         # Insert the QR code data
-        query = 'INSERT INTO qr_codes (qrcode_id, value, state, creation_date, qr_image) VALUES (%s, %s, %s, %s, %s)'
-        values = (qrcode_id, qr_data.value, qr_data.state, qr_data.creation_date, qr_image_binary)
+        query = 'INSERT INTO qr_codes (qrcode_id, new_value, old_value, state, creation_date, qr_image) VALUES (%s, %s, %s, %s, %s, %s)'
+        values = (qrcode_id, qr_data.new_value, qr_data.old_value, qr_data.state, qr_data.creation_date, qr_image_binary)
         cursor.execute(query, values)
         db.commit()
 
@@ -149,10 +151,11 @@ async def create_qr_data(
         
         return QRCode(
             qrcode_id=result[0],
-            value=float(result[1]),
-            state=result[2],
-            creation_date=result[3],
-            used_date=result[4],
+            new_value=float(result[1]),
+            old_value=float(result[2]),
+            state=result[3],
+            creation_date=result[4],
+            used_date=result[5],
             qr_image=qr_image_base64
         )
     except mysql.connector.Error as err:
@@ -192,12 +195,12 @@ async def get_qr_data(
         # Si se especifican campos, solo seleccionamos esos
         if fields:
             requested_fields = fields.split(',')
-            valid_fields = {'qrcode_id', 'value', 'state', 'creation_date', 'used_date', 'qr_image'}
+            valid_fields = {'qrcode_id', 'new_value', 'old_value', 'state', 'creation_date', 'used_date', 'qr_image'}
             # Validar que los campos solicitados sean válidos
             if not all(field in valid_fields for field in requested_fields):
                 raise HTTPException(
                     status_code=400,
-                    detail="Campos inválidos. Los campos válidos son: qrcode_id, value, state, creation_date, used_date, qr_image"
+                    detail="Campos inválidos. Los campos válidos son: qrcode_id, new_value, old_value, state, creation_date, used_date, qr_image"
                 )
             # Siempre incluir qrcode_id
             if 'qrcode_id' not in requested_fields:
@@ -219,7 +222,9 @@ async def get_qr_data(
             for i, field in enumerate(requested_fields):
                 if field == 'qr_image' and result[i] is not None:
                     response[field] = base64.b64encode(result[i]).decode('utf-8')
-                elif field == 'value':
+                elif field == 'new_value':
+                    response[field] = float(result[i])
+                elif field == 'old_value':
                     response[field] = float(result[i])
                 else:
                     response[field] = result[i]
@@ -227,11 +232,12 @@ async def get_qr_data(
             # Si no se especifican campos, devolver todo
             response = {
                 'qrcode_id': result[0],
-                'value': float(result[1]),
-                'state': result[2],
-                'creation_date': result[3],
-                'used_date': result[4],
-                'qr_image': base64.b64encode(result[5]).decode('utf-8') if result[5] else None
+                'new_value': float(result[1]),
+                'old_value': float(result[2]),
+                'state': result[3],
+                'creation_date': result[4],
+                'used_date': result[5],
+                'qr_image': base64.b64encode(result[6]).decode('utf-8') if result[6] else None
             }
         
         return response
@@ -272,15 +278,16 @@ async def get_all_qrcodes(
         for row in results:
             # Convert binary image back to base64 for response
             qr_image_base64 = None
-            if row[5]:  # If qr_image is not None
-                qr_image_base64 = base64.b64encode(row[5]).decode('utf-8')
+            if row[6]:  # If qr_image is not None
+                qr_image_base64 = base64.b64encode(row[6]).decode('utf-8')
                 
             qr_codes.append(QRCode(
                 qrcode_id=row[0],
-                value=float(row[1]),
-                state=row[2],
-                creation_date=row[3],
-                used_date=row[4],
+                new_value=float(row[1]),
+                old_value=float(row[2]),
+                state=row[3],
+                creation_date=row[4],
+                used_date=row[5],
                 qr_image=qr_image_base64
             ))
         
@@ -303,7 +310,7 @@ async def exchange_qr(qrcode_id: str):
     - Endpoint: PUT /api/qrdata/exchange/{qrcode_id}
     - Auth: No
     - Params: qrcode_id
-    - Response: {"status": "success", "message": string} | HTTPException
+    - Response: {"status": "success", "message": string, "new_value": float, "old_value": float} | HTTPException
     - Estados posibles: 
       * 200: Canjeado exitosamente
       * 400: No se puede canjear (inválido/usado)
@@ -316,24 +323,41 @@ async def exchange_qr(qrcode_id: str):
         db = mysql.connector.connect(**Config.DB_CONFIG)
         cursor = db.cursor()
         
-        # Check QR code status and value
-        cursor.execute('SELECT state, value FROM qr_codes WHERE qrcode_id = %s', (qrcode_id,))
+        # Check QR code status and new_value
+        cursor.execute('SELECT state, new_value FROM qr_codes WHERE qrcode_id = %s', (qrcode_id,))
         result = cursor.fetchone()
         
         if not result:
             raise HTTPException(status_code=404, detail="Código QR no encontrado")
             
-        state, value = result
+        state, new_value = result
         min_value = float(os.getenv("QR_MIN_VALUE", "0.05"))
-        if state == 'valido' and value > min_value:
-            # Update QR code
-            update_query = 'UPDATE qr_codes SET state = "usado", value = 0, used_date = %s WHERE qrcode_id = %s'
+        
+        if state == 'valido' and new_value > min_value:
+            # Update QR code: move new_value to old_value and set new_value to 0
+            update_query = '''
+                UPDATE qr_codes 
+                SET state = "usado", 
+                    old_value = new_value,
+                    new_value = 0, 
+                    used_date = %s 
+                WHERE qrcode_id = %s
+            '''
             used_date = datetime.now()
             cursor.execute(update_query, (used_date, qrcode_id))
             db.commit()
-            return {"status": "success", "message": "QR code exchanged successfully"}
+            
+            return {
+                "status": "success", 
+                "message": "QR code exchanged successfully",
+                "new_value": 0,
+                "old_value": new_value
+            }
         else:
-            raise HTTPException(status_code=400, detail="QR code cannot be exchanged")
+            raise HTTPException(
+                status_code=400, 
+                detail=f"QR code cannot be exchanged (state: {state}, new_value: {new_value})"
+            )
     except mysql.connector.Error as err:
         logger.error(f"Database error: {err}")
         raise HTTPException(
@@ -362,7 +386,7 @@ async def update_qr_data(
     - Request: QRCodeBase
     - Response: QRCode
     """
-    if qr_data.value <= 0:
+    if qr_data.new_value <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El valor del código QR debe ser mayor que 0"
@@ -407,8 +431,8 @@ async def update_qr_data(
                 )
 
         # Update the QR code data
-        query = 'UPDATE qr_codes SET value = %s, state = %s, creation_date = %s, qr_image = %s WHERE qrcode_id = %s'
-        values = (qr_data.value, qr_data.state, qr_data.creation_date, qr_image_binary, qrcode_id)
+        query = 'UPDATE qr_codes SET new_value = %s, old_value = %s, state = %s, creation_date = %s, qr_image = %s WHERE qrcode_id = %s'
+        values = (qr_data.new_value, qr_data.old_value, qr_data.state, qr_data.creation_date, qr_image_binary, qrcode_id)
         cursor.execute(query, values)
         db.commit()
 
@@ -424,15 +448,16 @@ async def update_qr_data(
         
         # Convert binary image back to base64 for response
         qr_image_base64 = None
-        if result[5]:  # If qr_image is not None
-            qr_image_base64 = base64.b64encode(result[5]).decode('utf-8')
+        if result[6]:  # If qr_image is not None
+            qr_image_base64 = base64.b64encode(result[6]).decode('utf-8')
         
         return QRCode(
             qrcode_id=result[0],
-            value=float(result[1]),
-            state=result[2],
-            creation_date=result[3],
-            used_date=result[4],
+            new_value=float(result[1]),
+            old_value=float(result[2]),
+            state=result[3],
+            creation_date=result[4],
+            used_date=result[5],
             qr_image=qr_image_base64
         )
     except mysql.connector.Error as err:
