@@ -10,7 +10,7 @@ load_dotenv()
 class Config:
     """Configuración del lector QR"""
     API_URL = os.getenv('API_URL', 'http://localhost:3000')
-    QR_MIN_VALUE = float(os.getenv('QR_MIN_VALUE', '10.0'))
+    QR_MIN_VALUE = float(os.getenv('QR_MIN_VALUE', '0.05'))
 
 def leer_qr_desde_lector_usb():
     """Lee códigos QR desde un lector USB, procesa la información y actualiza la base de datos."""
