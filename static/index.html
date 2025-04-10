@@ -380,18 +380,18 @@
                 // Obtener los datos de la respuesta
                 const data = await response.json();
                 
-                // Mostrar la información del código QR
-                document.getElementById('informacionQR').textContent = JSON.stringify(data, null, 2);
+                // Extraer solo los campos específicos que queremos mostrar
+                const displayData = {
+                    qrcode_id: data.qrcode_id,
+                    new_value: data.new_value,
+                    old_value: data.old_value,
+                    state: data.state,
+                    creation_date: data.creation_date,
+                    used_date: data.used_date
+                };
                 
-                // Si hay una imagen QR, mostrarla
-                if (data.qr_image) {
-                    const qrImageContainer = document.createElement('div');
-                    qrImageContainer.innerHTML = '<h3>Imagen QR almacenada:</h3>';
-                    
-                    const qrImage = document.createElement('img');
-                    
-                    // Asegurarse de que la imagen tenga el formato correcto
-                    let imageSrc = data.qr_image;
+                // Asegurarse de que la imagen tenga el formato correcto
+                let imageSrc = data.qr_image;
                     if (!imageSrc.startsWith('data:')) {
                         imageSrc = `data:image/png;base64,${imageSrc}`;
                     }
@@ -403,7 +403,18 @@
                     
                     qrImageContainer.appendChild(qrImage);
                     document.getElementById('informacionQR').appendChild(qrImageContainer);
-                }
+                
+                // Mostrar la información del código QR con formato
+                const formattedInfo = `
+                    ID: ${displayData.qrcode_id}
+                    Valor Nuevo: $${displayData.new_value}
+                    Valor Anterior: $${displayData.old_value}
+                    Estado: ${displayData.state}
+                    Fecha de creación: ${displayData.creation_date}
+                    Fecha de uso: ${displayData.used_date || 'No usado'}
+                `;
+                
+                document.getElementById('informacionQR').textContent = formattedInfo;
             } catch (error) {
                 // Mostrar el error si ocurrió alguno
                 document.getElementById('informacionQR').textContent = 'Error: ' + error.message;
