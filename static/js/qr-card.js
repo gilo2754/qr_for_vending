@@ -18,7 +18,7 @@ class QRCardComponent {
         // Agregar la información del QR
         cardContent += `
             <div class="qr-info">
-                <p><strong>ID:</strong> ${qrcode_id}</p>
+                <p><strong>QRCODE_ID:</strong> ${qrcode_id}</p>
                 <p><strong>Valor Nuevo:</strong> $${new_value}</p>
                 ${old_value > 0 ? `<p><strong>Valor Anterior:</strong> $${old_value}</p>` : ''}
                 <p><strong>Estado:</strong> <span class="state-badge state-${state}">${state}</span></p>
