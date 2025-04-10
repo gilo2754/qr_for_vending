@@ -41,7 +41,7 @@ services:
 
   mysql-backup:
     image: mysql:8
-    container_name: mysql-backup
+    container_name: qr-mysql-backup-${ENVIRONMENT}
     volumes:
       - ./backups:/backups
       - mysql_data:/var/lib/mysql:ro
