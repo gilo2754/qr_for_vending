@@ -4,7 +4,19 @@ class QRCardComponent {
         const qrCard = document.createElement('div');
         qrCard.className = 'qr-card';
         
-        let cardContent = `
+        let cardContent = '';
+
+        // Agregar la imagen QR si existe
+        if (qr_image) {
+            let imageSrc = qr_image;
+            if (!imageSrc.startsWith('data:')) {
+                imageSrc = `data:image/png;base64,${imageSrc}`;
+            }
+            cardContent += `<img src="${imageSrc}" alt="QR Code #${qrcode_id}" class="qr-image">`;
+        }
+
+        // Agregar la información del QR
+        cardContent += `
             <div class="qr-info">
                 <p><strong>ID:</strong> ${qrcode_id}</p>
                 <p><strong>Valor Nuevo:</strong> $${new_value}</p>
@@ -14,17 +26,6 @@ class QRCardComponent {
                 ${used_date ? `<p><strong>Fecha de uso:</strong> ${formatDateToElSalvador(used_date)}</p>` : ''}
             </div>
         `;
-
-        if (qr_image) {
-            let imageSrc = qr_image;
-            if (!imageSrc.startsWith('data:')) {
-                imageSrc = `data:image/png;base64,${imageSrc}`;
-            }
-            cardContent = `
-                <img src="${imageSrc}" alt="QR Code #${qrcode_id}" class="qr-image">
-                ${cardContent}
-            `;
-        }
 
         qrCard.innerHTML = cardContent;
         return qrCard;
