@@ -28,19 +28,22 @@ def leer_qr_desde_lector_usb():
             print("Código QR leído:", datos)
 
             try:
-                # Obtener información del QR (solo new_value y state)
-                url_get_info_qr = f"{Config.API_URL}/api/qrdata/{datos}?fields=new_value,state"
+                # Obtener información del QR (new_value, old_value y state)
+                url_get_info_qr = f"{Config.API_URL}/api/qrdata/{datos}?fields=new_value,old_value,state"
                 respuesta_get = requests.get(url_get_info_qr)
                 respuesta_get.raise_for_status()
                 info_qr = respuesta_get.json()
                 print("Información del QR:", info_qr)
 
-                valor_qr = info_qr.get('new_value', 0)
+                new_value = info_qr.get('new_value', 0)
+                old_value = info_qr.get('old_value', 0)
                 estado_qr = info_qr.get('state', '')
 
-                if valor_qr >= Config.QR_MIN_VALUE and estado_qr == 'valido':
-                    pulsos = int(valor_qr / Config.QR_MIN_VALUE)
+                # Usar new_value para determinar los pulsos
+                if new_value >= Config.QR_MIN_VALUE and estado_qr == 'valido':
+                    pulsos = int(new_value / Config.QR_MIN_VALUE)
                     print(f"Generando {pulsos} pulsos para el QR {datos}")
+                    print(f"Valor anterior: {old_value}, Nuevo valor: {new_value}")
 
                     # Actualizar el estado y el valor del QR
                     url_exchange_qr = f"{Config.API_URL}/api/qrdata/exchange/{datos}"
@@ -48,7 +51,7 @@ def leer_qr_desde_lector_usb():
                     respuesta_put.raise_for_status()
                     print(f"QR {datos} actualizado a 'usado' y valor a 0")
                 else:
-                    if valor_qr < Config.QR_MIN_VALUE:
+                    if new_value < Config.QR_MIN_VALUE:
                         print(f"El valor del QR {datos} es menor a {Config.QR_MIN_VALUE}. No se generan pulsos.")
                     elif estado_qr != 'valido':
                         print(f"El estado del QR {datos} no es 'valido'. No se generan pulsos.")
