@@ -12,23 +12,32 @@ class Config:
     """Configuración del lector QR"""
     API_URL = os.getenv('API_URL', 'http://localhost:3000')
     QR_MIN_VALUE = float(os.getenv('QR_MIN_VALUE', '0.05'))
-    LED_PIN = 18  # Pin GPIO para el LED
-    PULSE_DURATION = 0.1  # Duración de cada pulso en segundos
-    PULSE_INTERVAL = 0.2  # Intervalo entre pulsos en segundos
+    LED_PIN = 18  # Pin GPIO para el LED externo
+    PULSE_DURATION = 0.2  # Duración de cada pulso en segundos
+    PULSE_INTERVAL = 0.3  # Intervalo entre pulsos en segundos
 
 def setup_led():
     """Configura el pin del LED"""
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(Config.LED_PIN, GPIO.OUT)
-    GPIO.output(Config.LED_PIN, GPIO.LOW)
+    try:
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(Config.LED_PIN, GPIO.OUT)
+        GPIO.output(Config.LED_PIN, GPIO.LOW)
+        print(f"LED configurado en el pin GPIO {Config.LED_PIN}")
+    except Exception as e:
+        print(f"Error al configurar el LED: {e}")
+        print("Asegúrate de ejecutar el script con privilegios de superusuario (sudo)")
+        sys.exit(1)
 
 def pulse_led(times):
     """Genera pulsos visuales en el LED"""
-    for _ in range(times):
-        GPIO.output(Config.LED_PIN, GPIO.HIGH)
-        time.sleep(Config.PULSE_DURATION)
-        GPIO.output(Config.LED_PIN, GPIO.LOW)
-        time.sleep(Config.PULSE_INTERVAL)
+    try:
+        for _ in range(times):
+            GPIO.output(Config.LED_PIN, GPIO.HIGH)
+            time.sleep(Config.PULSE_DURATION)
+            GPIO.output(Config.LED_PIN, GPIO.LOW)
+            time.sleep(Config.PULSE_INTERVAL)
+    except Exception as e:
+        print(f"Error al generar pulsos en el LED: {e}")
 
 def leer_qr_desde_lector_usb():
     """Lee códigos QR desde un lector USB, procesa la información y actualiza la base de datos."""
