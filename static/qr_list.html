@@ -46,11 +46,24 @@
         <div id="loading">Cargando códigos QR...</div>
         <div id="error" class="error-message"></div>
         <div id="qrList" class="qr-grid"></div>
+        
+        <!-- Controles de paginación -->
+        <div class="pagination-controls">
+            <button id="prevPage" class="btn" onclick="changePage(-1)" disabled>Anterior</button>
+            <span id="pageInfo">Página <span id="currentPage">1</span> de <span id="totalPages">1</span></span>
+            <button id="nextPage" class="btn" onclick="changePage(1)" disabled>Siguiente</button>
+        </div>
     </div>
 
     <script>
         // Obtener la URL base de la API
         const API_URL = window.location.origin;
+        
+        // Variables para la paginación
+        let currentPage = 1;
+        const itemsPerPage = 100;
+        let totalItems = 0;
+        let totalPages = 1;
 
         // Función para obtener el token de autenticación
         function getAuthToken() {
@@ -62,6 +75,78 @@
             const token = localStorage.getItem('access_token');
             if (!token) {
                 window.location.href = '/login.html';
+            }
+        }
+        
+        // Función para cambiar de página
+        function changePage(delta) {
+            const newPage = currentPage + delta;
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                loadQRCodes();
+                updatePaginationControls();
+            }
+        }
+        
+        // Función para actualizar los controles de paginación
+        function updatePaginationControls() {
+            document.getElementById('currentPage').textContent = currentPage;
+            document.getElementById('totalPages').textContent = totalPages;
+            document.getElementById('prevPage').disabled = currentPage <= 1;
+            document.getElementById('nextPage').disabled = currentPage >= totalPages;
+        }
+        
+        // Función para cargar los códigos QR con paginación
+        async function loadQRCodes() {
+            const qrList = document.getElementById('qrList');
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            
+            qrList.innerHTML = '';
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            
+            try {
+                const token = getAuthToken();
+                const response = await fetch(`${API_URL}/api/qrcodes?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Error al cargar los códigos QR: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                // Actualizar estadísticas
+                document.getElementById('valid-count').textContent = data.stats.valid || 0;
+                document.getElementById('in-circulation-count').textContent = data.stats.in_circulation || 0;
+                document.getElementById('used-count').textContent = data.stats.used || 0;
+                document.getElementById('expired-count').textContent = data.stats.expired || 0;
+                document.getElementById('invalidated-count').textContent = data.stats.invalidated || 0;
+                document.getElementById('total-count').textContent = data.stats.total || 0;
+                
+                // Actualizar información de paginación
+                totalItems = data.stats.total || 0;
+                totalPages = Math.ceil(totalItems / itemsPerPage);
+                updatePaginationControls();
+                
+                // Mostrar los códigos QR
+                if (data.qrcodes && data.qrcodes.length > 0) {
+                    data.qrcodes.forEach(qr => {
+                        const qrCard = new QRCardComponent(qr);
+                        qrList.appendChild(qrCard);
+                    });
+                } else {
+                    qrList.innerHTML = '<p class="no-results">No se encontraron códigos QR.</p>';
+                }
+            } catch (err) {
+                error.textContent = err.message;
+                error.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
             }
         }
 

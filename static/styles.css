@@ -135,10 +135,9 @@ body {
 }
 
 .qr-container {
-    background: white;
+    background-color: white;
     margin-right: 20px;
     text-align: center;
-    background-color: white;
     padding: 20px;
     border-radius: 8px;
     border: 2px solid black;
@@ -146,12 +145,10 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.qr-containerhover {
+.qr-container:hover {
     transform: translateY(-5px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
-
-
 
 .qr-image {
     max-width: 200px;
@@ -178,7 +175,7 @@ body {
 }
 
 /* Estados de QR */
-.qr-state {
+.state-badge {
     display: inline-block;
     padding: 4px 8px;
     border-radius: 4px;
@@ -242,5 +239,36 @@ body {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
+}
+
+/* Paginación */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+    gap: 15px;
+}
+
+.pagination-controls button {
+    min-width: 100px;
+}
+
+.pagination-controls button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+#pageInfo {
+    font-size: 14px;
+    color: #666;
+}
+
+.no-results {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+    font-style: italic;
+    grid-column: 1 / -1;
 }
 
