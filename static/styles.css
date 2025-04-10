@@ -38,7 +38,22 @@ body {
 }
 
 /* Botones */
-.btn, .logout-btn, .refresh-button {
+.btn {
+    background-color: #0066cc;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px;
+    font-size: 14px;
+}
+
+.btn:hover {
+    background-color: #0052a3;
+}
+
+.logout-btn, .refresh-button {
     padding: 0.5rem 1rem;
     border: none;
     border-radius: 4px;
@@ -111,13 +126,41 @@ body {
     border-radius: 4px;
 }
 
-/* QR Cards */
+/* QR Cards y Grid */
+.qr-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
 .qr-card {
     background: white;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     margin-bottom: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.qr-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.qr-container {
+    display: inline-block;
+    margin-right: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.qr-code-wrapper {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    display: inline-block;
+    border: 2px solid black;
+    margin-bottom: 10px;
 }
 
 .qr-image-container {
@@ -128,7 +171,7 @@ body {
 .qr-image {
     max-width: 200px;
     height: auto;
-    border: 1px solid #dee2e6;
+    border: 2px solid black;
     padding: 10px;
     border-radius: 4px;
     background-color: white;
@@ -214,8 +257,48 @@ body {
     gap: 20px;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
     .two-column-layout {
         grid-template-columns: 1fr;
+    }
+
+    .qr-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .qr-card {
+        margin: 10px 0;
+    }
+
+    .stats-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .header {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .qr-container {
+        margin-right: 0;
+        margin-bottom: 20px;
+        width: 100%;
+    }
+
+    .qr-code-wrapper {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-container {
+        grid-template-columns: 1fr;
+    }
+
+    body {
+        padding: 10px;
     }
 } 
