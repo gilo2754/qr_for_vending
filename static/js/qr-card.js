@@ -22,8 +22,8 @@ class QRCardComponent {
                 <p><strong>Valor Nuevo:</strong> $${new_value}</p>
                 ${old_value > 0 ? `<p><strong>Valor Anterior:</strong> $${old_value}</p>` : ''}
                 <p><strong>Estado:</strong> <span class="state-badge state-${state}">${state}</span></p>
-                <p><strong>Fecha de creación:</strong> ${formatDateToElSalvador(creation_date)}</p>
-                ${used_date ? `<p><strong>Fecha de uso:</strong> ${formatDateToElSalvador(used_date)}</p>` : ''}
+                <p><strong>Fecha de creación:</strong> ${creation_date}</p>
+                ${used_date ? `<p><strong>Fecha de uso:</strong> ${used_date}</p>` : ''}
             </div>
         `;
 

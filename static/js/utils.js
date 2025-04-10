@@ -2,6 +2,7 @@
 const TIMEZONE_OFFSET = 6; // El Salvador is UTC-6
 
 // Función para formatear fechas a la zona horaria de El Salvador (UTC-6)
+/*
 function formatDateToElSalvador(dateString) {
     try {
         const date = new Date(dateString);
@@ -24,6 +25,7 @@ function formatDateToElSalvador(dateString) {
         return dateString;
     }
 }
+*/
 
 // Función para contar estadísticas de QRs por estado
 function countQRStats(qrCodes) {
@@ -107,6 +109,6 @@ async function loadQRCodes() {
 }
 
 // Hacer las funciones disponibles globalmente
-window.formatDateToElSalvador = formatDateToElSalvador;
+// window.formatDateToElSalvador = formatDateToElSalvador;
 window.countQRStats = countQRStats;
 window.loadQRCodes = loadQRCodes; 
