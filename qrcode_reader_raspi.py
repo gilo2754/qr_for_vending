@@ -3,6 +3,7 @@ import requests
 import time
 import os
 from dotenv import load_dotenv
+import RPi.GPIO as GPIO
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -11,6 +12,23 @@ class Config:
     """Configuración del lector QR"""
     API_URL = os.getenv('API_URL', 'http://localhost:3000')
     QR_MIN_VALUE = float(os.getenv('QR_MIN_VALUE', '0.05'))
+    LED_PIN = 18  # Pin GPIO para el LED
+    PULSE_DURATION = 0.1  # Duración de cada pulso en segundos
+    PULSE_INTERVAL = 0.2  # Intervalo entre pulsos en segundos
+
+def setup_led():
+    """Configura el pin del LED"""
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(Config.LED_PIN, GPIO.OUT)
+    GPIO.output(Config.LED_PIN, GPIO.LOW)
+
+def pulse_led(times):
+    """Genera pulsos visuales en el LED"""
+    for _ in range(times):
+        GPIO.output(Config.LED_PIN, GPIO.HIGH)
+        time.sleep(Config.PULSE_DURATION)
+        GPIO.output(Config.LED_PIN, GPIO.LOW)
+        time.sleep(Config.PULSE_INTERVAL)
 
 def leer_qr_desde_lector_usb():
     """Lee códigos QR desde un lector USB, procesa la información y actualiza la base de datos."""
@@ -18,6 +36,9 @@ def leer_qr_desde_lector_usb():
     print(f"Esperando la lectura de códigos QR desde el lector USB...")
     print(f"API URL: {Config.API_URL}")
     print(f"Valor mínimo QR: {Config.QR_MIN_VALUE}")
+
+    # Configurar el LED
+    setup_led()
 
     while True:
         try:
@@ -45,6 +66,9 @@ def leer_qr_desde_lector_usb():
                     print(f"Generando {pulsos} pulsos para el QR {datos}")
                     print(f"Valor anterior: {old_value}, Nuevo valor: {new_value}")
 
+                    # Generar pulsos visuales en el LED
+                    pulse_led(pulsos)
+
                     # Actualizar el estado y el valor del QR
                     url_exchange_qr = f"{Config.API_URL}/api/qrdata/exchange/{datos}"
                     respuesta_put = requests.put(url_exchange_qr)
@@ -63,6 +87,7 @@ def leer_qr_desde_lector_usb():
 
         except KeyboardInterrupt:
             print("Programa terminado por el usuario.")
+            GPIO.cleanup()  # Limpiar configuración GPIO al salir
             break
         except Exception as e:
             print(f"Error al leer desde el lector USB: {e}")
