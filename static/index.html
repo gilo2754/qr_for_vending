@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generador de QR</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/qr-card-component.js"></script>
 </head>
 <body>
     <div class="header">
@@ -118,8 +122,6 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script>
         // Verificar si la biblioteca qrcodejs está cargada
         console.log('QRCode disponible:', typeof QRCode !== 'undefined');
@@ -468,35 +470,14 @@
 
                 // Mostrar la lista de códigos QR
                 qrCodes.forEach(qr => {
-                    const qrCard = document.createElement('div');
-                    qrCard.className = 'qr-card';
-                    
-                    // Crear el contenido HTML de la tarjeta
-                    let cardContent = `
-                        <h3>${qr.qrcode_id}</h3>
-                        <div class="qr-info"><strong>Valor Nuevo:</strong> $${qr.new_value.toFixed(2)}</div>
-                        ${qr.old_value > 0 ? `<div class="qr-info"><strong>Valor Anterior:</strong> $${qr.old_value.toFixed(2)}</div>` : ''}
-                        <div class="qr-info"><strong>Estado:</strong> <span class="qr-state state-${qr.state}">${qr.state}</span></div>
-                        <div class="qr-info"><strong>Fecha de creación:</strong> ${formatDateToElSalvador(qr.creation_date)}</div>
-                        ${qr.used_date ? `<div class="qr-info"><strong>Fecha de canje:</strong> ${formatDateToElSalvador(qr.used_date)}(UTC-6)</div>` : 'Aún no canjeado'}
-                    `;
-                    
-                    // Añadir la imagen QR si está disponible
-                    if (qr.qr_image) {
-                        // Asegurarse de que la imagen tenga el formato correcto
-                        let imageSrc = qr.qr_image;
-                        if (!imageSrc.startsWith('data:')) {
-                            imageSrc = `data:image/png;base64,${imageSrc}`;
-                        }
-                        
-                        cardContent += `
-                            <div class="qr-image-container">
-                                <img src="${imageSrc}" alt="QR Code #${qr.qrcode_id}" class="qr-image">
-                            </div>
-                        `;
-                    }
-                    
-                    qrCard.innerHTML = cardContent;
+                    const qrCard = QRCardComponent.createCard({
+                        qrcode_id: qr.qrcode_id,
+                        value: qr.value,
+                        state: qr.state,
+                        creation_date: qr.creation_date,
+                        used_date: qr.used_date,
+                        qr_image: qr.qr_image
+                    });
                     qrListElement.appendChild(qrCard);
                 });
 

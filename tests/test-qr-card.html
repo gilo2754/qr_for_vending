@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test QR Card Component</title>
+    <link rel="stylesheet" href="../static/styles.css">
+    <script src="../static/js/utils.js"></script>
+    <script src="../static/js/qr-card.js"></script>
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-title {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .test-description {
+            margin-bottom: 15px;
+            color: #666;
+        }
+        .test-result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+        .test-button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .test-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Test QR Card Component</h1>
+        
+        <div class="test-section">
+            <h2 class="test-title">Test 1: QR Card con todos los campos</h2>
+            <div class="test-description">
+                Prueba la creación de una tarjeta QR con todos los campos disponibles
+            </div>
+            <button onclick="runTest1()" class="test-button">Ejecutar Test 1</button>
+            <div id="test1-result" class="test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">Test 2: QR Card sin fecha de uso</h2>
+            <div class="test-description">
+                Prueba la creación de una tarjeta QR sin fecha de uso (QR no canjeado)
+            </div>
+            <button onclick="runTest2()" class="test-button">Ejecutar Test 2</button>
+            <div id="test2-result" class="test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2 class="test-title">Test 3: QR Card sin imagen</h2>
+            <div class="test-description">
+                Prueba la creación de una tarjeta QR sin imagen QR
+            </div>
+            <button onclick="runTest3()" class="test-button">Ejecutar Test 3</button>
+            <div id="test3-result" class="test-result"></div>
+        </div>
+    </div>
+
+    <script>
+        // Datos de prueba
+        const sampleQRImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+        
+        function runTest1() {
+            const testContainer = document.getElementById('test1-result');
+            testContainer.innerHTML = '';
+            
+            const qrCard = QRCardComponent.createCard({
+                qrcode_id: 'TEST123',
+                value: 50.00,
+                state: 'valido',
+                creation_date: '2024-01-20T10:00:00Z',
+                used_date: '2024-01-21T15:30:00Z',
+                qr_image: sampleQRImage
+            });
+            
+            testContainer.appendChild(qrCard);
+        }
+
+        function runTest2() {
+            const testContainer = document.getElementById('test2-result');
+            testContainer.innerHTML = '';
+            
+            const qrCard = QRCardComponent.createCard({
+                qrcode_id: 'TEST456',
+                value: 25.50,
+                state: 'valido',
+                creation_date: '2024-01-20T10:00:00Z',
+                qr_image: sampleQRImage
+            });
+            
+            testContainer.appendChild(qrCard);
+        }
+
+        function runTest3() {
+            const testContainer = document.getElementById('test3-result');
+            testContainer.innerHTML = '';
+            
+            const qrCard = QRCardComponent.createCard({
+                qrcode_id: 'TEST789',
+                value: 75.25,
+                state: 'usado',
+                creation_date: '2024-01-20T10:00:00Z',
+                used_date: '2024-01-21T15:30:00Z'
+            });
+            
+            testContainer.appendChild(qrCard);
+        }
+    </script>
+</body>
+</html> 
