@@ -71,7 +71,6 @@ Once the server is running, you can access:
 QR codes can have the following states:
 
 - **válido**: The QR code is active and can be used to make a purchase in the vending machine.
-- **enCirculación**: The QR code has been generated and is in the hands of a user, but has not yet been used.
 - **usado**: The QR code has already been exchanged for a product in the vending machine and cannot be used again.
 - **expirado**: The QR code has exceeded its validity date and can no longer be used.
 - **invalidado**: The QR code has been manually invalidated for some reason (for example, if a problem or fraud is detected).

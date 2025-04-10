@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS users (
 INSERT INTO qr_codes (qrcode_id, new_value, old_value, state, creation_date) 
 VALUES ('TEST_VALIDO', 10.00, 0.00, 'valido', CURDATE());
 
--- QR de prueba - Estado: enCirculación
+-- QR de prueba - Estado: válido
 INSERT INTO qr_codes (qrcode_id, new_value, old_value, state, creation_date) 
 VALUES ('TEST_CIRCUL', 15.00, 0.00, 'valido', CURDATE());
 

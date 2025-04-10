@@ -444,7 +444,6 @@
                 // Actualizar contadores
                 const stats = {
                     valido: 0,
-                    enCirculacion: 0,
                     usado: 0,
                     expirado: 0,
                     invalidado: 0,
@@ -462,7 +461,6 @@
 
                 // Actualizar los valores en el DOM
                 document.getElementById('valid-count').textContent = stats.valido;
-                document.getElementById('in-circulation-count').textContent = stats.enCirculacion;
                 document.getElementById('used-count').textContent = stats.usado;
                 document.getElementById('expired-count').textContent = stats.expirado;
                 document.getElementById('invalidated-count').textContent = stats.invalidado;
