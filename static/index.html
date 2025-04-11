@@ -41,10 +41,10 @@
                     <div class="form-group">
                         <label for="estado">Estado del QR:</label>
                         <select id="estado">
-                            <option value="valido">válido</option>
-                            <option value="usado">usado</option>
-                            <option value="expirado">expirado</option>
-                            <option value="invalidado">invalidado</option>
+                            <option value=${QRStates.VALID}>válido</option>
+                            <option value=${QRStates.USED}>usado</option>
+                            <option value=${QRStates.EXPIRED}>expirado</option>
+                            <option value=${QRStates.INVALIDATED}>invalidado</option>
                         </select>
                     </div>
 
@@ -96,7 +96,7 @@
                             <span class="stat-label">Válidos:</span>
                             <span class="stat-value" id="valid-count">0</span>
                         </div>
-                        <button class="delete-btn" onclick="deleteQRCodesByState('valido')">Borrar</button>
+                        <button class="delete-btn" onclick="deleteQRCodesByState('${QRStates.VALID}')">Borrar</button>
                     </div>
                     <div class="stat-item">
                         <div>
