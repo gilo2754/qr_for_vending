@@ -138,12 +138,21 @@ class QRReader:
 
     def process_qr(self, qr_code):
         try:
+            # Verificar estado del servidor primero
             if not self.server_available:
-                logging.warning(f"QR leído: {qr_code}")
-                logging.warning("❗ El servidor no está disponible en este momento")
-                logging.warning("El QR será leído pero no procesado hasta recuperar la conexión")
+                has_internet = self.check_internet_connection()
+                logging.warning("="*50)
+                logging.warning(f"📱 QR leído: {qr_code}")
+                if has_internet:
+                    logging.warning("✅ Conexión a Internet: OK")
+                    logging.warning("❌ Servidor: NO DISPONIBLE")
+                else:
+                    logging.warning("❌ Sin conexión a Internet")
+                logging.warning(f"Próximo intento de conexión en {int(self.server_check_interval - (time.time() - self.last_server_check))} segundos")
+                logging.warning("="*50)
                 return False
 
+            # Si hay conexión, proceder con el procesamiento normal
             info = self.get_qr_info(qr_code)
             new_value = info.get('new_value', 0)
             old_value = info.get('old_value', 0)
