@@ -64,16 +64,17 @@ async function loadQRCodes() {
         // Obtener la URL base de la API
         const apiUrl = window.location.origin;
         
-        // Cargar los códigos QR
-        const response = await fetch(`${apiUrl}/api/qrcodes`, {
+        // Cargar los códigos QR con paginación
+        const response = await fetch(`${apiUrl}/api/qrcodes?limit=${window.itemsPerPage}&offset=${(window.currentPage - 1) * window.itemsPerPage}`, {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                'Authorization': `Bearer ${getAuthToken()}`
             }
         });
         if (!response.ok) {
             throw new Error(`Error al cargar los códigos QR: ${response.status}`);
         }
-        const qrCodes = await response.json();
+        const data = await response.json();
+        const qrCodes = data.qrcodes || [];
 
         // Actualizar contadores usando la función de utilidad
         const stats = countQRStats(qrCodes);
@@ -85,19 +86,28 @@ async function loadQRCodes() {
         document.getElementById('invalidated-count').textContent = stats.invalidado;
         document.getElementById('total-count').textContent = stats.total;
 
+        // Actualizar información de paginación
+        window.totalItems = stats.total;
+        window.totalPages = Math.ceil(window.totalItems / window.itemsPerPage);
+        updatePaginationControls();
+
         // Mostrar la lista de códigos QR usando el componente
-        qrCodes.forEach(qr => {
-            const qrCard = QRCardComponent.createCard({
-                qrcode_id: qr.qrcode_id,
-                new_value: qr.new_value,
-                old_value: qr.old_value,
-                state: qr.state,
-                creation_date: qr.creation_date,
-                used_date: qr.used_date,
-                qr_image: qr.qr_image
+        if (qrCodes.length > 0) {
+            qrCodes.forEach(qr => {
+                const qrCard = QRCardComponent.createCard({
+                    qrcode_id: qr.qrcode_id,
+                    new_value: qr.new_value,
+                    old_value: qr.old_value,
+                    state: qr.state,
+                    creation_date: qr.creation_date,
+                    used_date: qr.used_date,
+                    qr_image: qr.qr_image
+                });
+                qrListElement.appendChild(qrCard);
             });
-            qrListElement.appendChild(qrCard);
-        });
+        } else {
+            qrListElement.innerHTML = '<p class="no-results">No se encontraron códigos QR.</p>';
+        }
 
         loadingElement.style.display = 'none';
     } catch (error) {
@@ -108,7 +118,85 @@ async function loadQRCodes() {
     }
 }
 
+// Función para actualizar los controles de paginación
+function updatePaginationControls() {
+    document.getElementById('currentPage').textContent = window.currentPage;
+    document.getElementById('totalPages').textContent = window.totalPages;
+    document.getElementById('prevPage').disabled = window.currentPage <= 1;
+    document.getElementById('nextPage').disabled = window.currentPage >= window.totalPages;
+}
+
+// Función para cambiar de página
+function changePage(delta) {
+    const newPage = window.currentPage + delta;
+    if (newPage >= 1 && newPage <= window.totalPages) {
+        window.currentPage = newPage;
+        loadQRCodes();
+    }
+}
+
+// Función para borrar QRs por estado
+async function deleteQRCodesByState(state) {
+    if (!confirm(`¿Estás seguro de que deseas borrar todos los códigos QR con estado "${state}"?`)) {
+        return;
+    }
+    
+    const loading = document.getElementById('loading');
+    const error = document.getElementById('error');
+    
+    loading.style.display = 'block';
+    error.style.display = 'none';
+    
+    try {
+        const token = getAuthToken();
+        const response = await fetch(`${window.location.origin}/api/qrdata/state/${state}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Error al borrar los códigos QR: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        alert(result.message);
+        
+        // Recargar la lista después de borrar
+        loadQRCodes();
+    } catch (err) {
+        error.textContent = err.message;
+        error.style.display = 'block';
+    } finally {
+        loading.style.display = 'none';
+    }
+}
+
+// Función para descargar todos los QR generados
+function descargarTodos() {
+    if (!window.qrCanvases || window.qrCanvases.length === 0) {
+        alert('No hay códigos QR para descargar');
+        return;
+    }
+
+    window.qrCanvases.forEach(({canvas, filename}) => {
+        canvas.toBlob(function(blob) {
+            saveAs(blob, filename);
+        });
+    });
+}
+
+// Inicializar variables de paginación
+window.currentPage = 1;
+window.itemsPerPage = 100;
+window.totalItems = 0;
+window.totalPages = 1;
+
 // Hacer las funciones disponibles globalmente
-// window.formatDateToElSalvador = formatDateToElSalvador;
 window.countQRStats = countQRStats;
-window.loadQRCodes = loadQRCodes; 
+window.loadQRCodes = loadQRCodes;
+window.deleteQRCodesByState = deleteQRCodesByState;
+window.descargarTodos = descargarTodos;
+window.changePage = changePage;
+window.updatePaginationControls = updatePaginationControls; 
