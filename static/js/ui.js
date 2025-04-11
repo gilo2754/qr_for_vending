@@ -8,21 +8,24 @@ const API_URL = window.location.origin;
 function openTab(tabName) {
     // Ocultar todos los contenidos de pestañas
     const tabContents = document.getElementsByClassName('tab-content');
-    for (let i = 0; i < tabContents.length; i++) {
-        tabContents[i].classList.remove('active');
+    for (let content of tabContents) {
+        content.classList.remove('active');
     }
     
     // Desactivar todas las pestañas
     const tabs = document.getElementsByClassName('tab');
-    for (let i = 0; i < tabs.length; i++) {
-        tabs[i].classList.remove('active');
+    for (let tab of tabs) {
+        tab.classList.remove('active');
     }
     
     // Mostrar el contenido de la pestaña seleccionada
     document.getElementById(tabName).classList.add('active');
     
     // Activar la pestaña seleccionada
-    event.currentTarget.classList.add('active');
+    const selectedTab = Array.from(tabs).find(tab => tab.textContent.toLowerCase().includes(tabName));
+    if (selectedTab) {
+        selectedTab.classList.add('active');
+    }
     
     // Si se selecciona la pestaña de lista, cargar los códigos QR
     if (tabName === 'list') {
@@ -184,6 +187,7 @@ async function generarQR() {
             qrContainer.appendChild(estadoElement);
         } catch (error) {
             console.error('Error en el proceso de generación del QR:', error);
+            alert('Error al generar el código QR: ' + error.message);
         }
     }
 }
@@ -206,13 +210,6 @@ async function obtenerInformacion() {
             }
         });
 
-        // Verificar si el código QR no fue encontrado
-        if (response.status === 404) {
-            document.getElementById('informacionQR').textContent = 'ID no encontrado.';
-            return;
-        }
-
-        // Verificar si la solicitud fue exitosa
         if (!response.ok) {
             if (response.status === 401) {
                 window.location.href = '/login.html';
@@ -221,58 +218,32 @@ async function obtenerInformacion() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        // Obtener los datos de la respuesta
         const data = await response.json();
         
-        // Extraer solo los campos específicos que queremos mostrar
-        const displayData = {
-            qrcode_id: data.qrcode_id,
-            new_value: data.new_value,
-            old_value: data.old_value,
-            state: data.state,
-            creation_date: data.creation_date,
-            used_date: data.used_date
-        };
-        
-        // Asegurarse de que la imagen tenga el formato correcto
-        let imageSrc = data.qr_image;
-        if (!imageSrc.startsWith('data:')) {
-            imageSrc = `data:image/png;base64,${imageSrc}`;
-        }
-        console.log(`Formato de imagen para QR ${data.qrcode_id}: ${imageSrc.substring(0, 30)}...`);
-        
-        // Crear elementos para mostrar la imagen
-        const qrImageContainer = document.createElement('div');
-        qrImageContainer.className = 'qr-image-container';
-        
-        const qrImage = document.createElement('img');
-        qrImage.src = imageSrc;
-        qrImage.alt = 'QR Code Image';
-        qrImage.style.maxWidth = '200px';
-        
-        qrImageContainer.appendChild(qrImage);
-        
-        // Limpiar el contenedor de información
-        const informacionQR = document.getElementById('informacionQR');
-        informacionQR.innerHTML = '';
-        informacionQR.appendChild(qrImageContainer);
-        
-        // Mostrar la información del código QR con formato
-        const formattedInfo = `
-            ID: ${displayData.qrcode_id}
-            Valor Nuevo: $${displayData.new_value}
-            Valor Anterior: $${displayData.old_value}
-            Estado: ${displayData.state}
-            Fecha de creación: ${displayData.creation_date}
-            Fecha de uso: ${displayData.used_date || 'No usado'}
+        // Mostrar la información en el contenedor
+        const infoContainer = document.getElementById('informacionQR');
+        infoContainer.innerHTML = `
+            <div class="qr-info">
+                <p><strong>ID:</strong> ${data.qrcode_id}</p>
+                <p><strong>Valor Nuevo:</strong> $${data.new_value}</p>
+                <p><strong>Valor Anterior:</strong> $${data.old_value}</p>
+                <p><strong>Fecha de Creación:</strong> ${new Date(data.creation_date).toLocaleDateString()}</p>
+                <p><strong>Estado:</strong> <span class="state-badge state-${data.state}">${data.state}</span></p>
+            </div>
         `;
-        
-        const infoText = document.createElement('pre');
-        infoText.textContent = formattedInfo;
-        informacionQR.appendChild(infoText);
+
+        // Si hay una imagen QR, mostrarla
+        if (data.qr_image) {
+            const qrImage = document.createElement('img');
+            qrImage.src = data.qr_image;
+            qrImage.className = 'qr-image';
+            qrImage.alt = 'Código QR';
+            infoContainer.insertBefore(qrImage, infoContainer.firstChild);
+        }
+
     } catch (error) {
-        // Mostrar el error si ocurrió alguno
-        document.getElementById('informacionQR').textContent = 'Error: ' + error.message;
+        console.error('Error:', error);
+        alert('Error al obtener la información del código QR: ' + error.message);
     }
 }
 
