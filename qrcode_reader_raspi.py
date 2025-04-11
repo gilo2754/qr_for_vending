@@ -38,9 +38,7 @@ class QRReader:
         self.session = requests.Session()
         self.server_available = False
         self.last_server_check = 0
-        self.server_check_interval = 10
-        self.connection_failures = 0
-        self.max_failures = Config.MAX_RETRIES
+        self.server_check_interval = 10  # segundos entre chequeos
 
     def check_server_status(self):
         """Verifica si el servidor está en funcionamiento"""
@@ -54,28 +52,18 @@ class QRReader:
             response.raise_for_status()
             if not self.server_available:
                 logging.info("✅ Conexión recuperada con el servidor")
-                self.connection_failures = 0
             self.server_available = True
             return True
         except requests.exceptions.RequestException as e:
-            self.connection_failures += 1
-            if self.server_available or self.connection_failures >= self.max_failures:
-                logging.error(f"❌ ALERTA: SERVIDOR CAÍDO - Intento {self.connection_failures}")
-                logging.error(f"Error de conexión: {str(e)}")
+            if self.server_available:  # Solo logear cuando cambia el estado
                 logging.error("="*50)
-                logging.error("     SERVIDOR NO DISPONIBLE")
+                logging.error("❌ SERVIDOR NO DISPONIBLE")
+                logging.error(f"Error: {str(e)}")
+                logging.error("Los QRs podrán leerse pero no procesarse")
+                logging.error("Intentando reconexión cada 10 segundos...")
                 logging.error("="*50)
             self.server_available = False
             return False
-
-    def wait_for_server(self):
-        """Espera hasta que el servidor esté disponible"""
-        while not self.check_server_status():
-            if self.connection_failures == 1:
-                logging.warning("Intentando reconectar con el servidor...")
-            elif self.connection_failures % 5 == 0:  # Mostrar mensaje cada 5 intentos
-                logging.warning(f"Intento de reconexión #{self.connection_failures}")
-            time.sleep(5)
 
     def get_qr_info(self, qr_code):
         url = f"{self.api_url}/api/qrdata/{qr_code}?fields=new_value,old_value,state"
@@ -93,11 +81,13 @@ class QRReader:
         return int(value / self.min_value)
 
     def process_qr(self, qr_code):
-        if not self.server_available:
-            logging.error("❌ No se puede procesar el QR: Servidor no disponible")
-            return False
-
         try:
+            if not self.server_available:
+                logging.warning(f"QR leído: {qr_code}")
+                logging.warning("❗ El servidor no está disponible en este momento")
+                logging.warning("El QR será leído pero no procesado hasta recuperar la conexión")
+                return False
+
             info = self.get_qr_info(qr_code)
             new_value = info.get('new_value', 0)
             old_value = info.get('old_value', 0)
@@ -145,14 +135,14 @@ def leer_qr_desde_lector_usb():
     reader = QRReader(Config.API_URL, Config.QR_MIN_VALUE)
 
     # Verificación inicial del servidor
-    reader.wait_for_server()
+    if not reader.check_server_status():
+        logging.warning("Iniciando sin conexión al servidor")
+        logging.warning("Se podrán leer QRs pero no procesarlos hasta recuperar la conexión")
 
     while True:
         try:
             # Verificar periódicamente el estado del servidor
-            if not reader.check_server_status():
-                reader.wait_for_server()
-                continue
+            reader.check_server_status()  # Solo verifica, no bloquea
 
             # Leer la línea completa enviada por el lector USB
             datos = input()
@@ -161,16 +151,19 @@ def leer_qr_desde_lector_usb():
             if not datos:
                 continue
 
-            logging.info(f"📱 Código QR leído: {datos}")
+            logging.info(f"📱 QR leído: {datos}")
 
             if reader.process_qr(datos):
-                logging.info("✅ Procesamiento de QR exitoso")
+                logging.info("✅ QR procesado exitosamente")
             else:
-                logging.warning("⚠️ No se pudo procesar el QR")
+                if not reader.server_available:
+                    logging.warning("⚠️ QR no procesado - Servidor no disponible")
+                else:
+                    logging.warning("⚠️ QR no procesado - Verificar estado y valor")
 
         except KeyboardInterrupt:
             logging.info("="*50)
-            logging.info("🛑 Programa terminado por el usuario.")
+            logging.info("🛑 Programa terminado por el usuario")
             logging.info("="*50)
             break
         except Exception as e:
