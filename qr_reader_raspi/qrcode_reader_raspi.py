@@ -1,4 +1,3 @@
-import sys
 import requests
 import time
 import os
@@ -235,4 +234,3 @@ def leer_qr_desde_lector_usb():
 
 if __name__ == "__main__":
     leer_qr_desde_lector_usb()
-

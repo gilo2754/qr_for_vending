@@ -1,0 +1,14 @@
+[Unit]
+Description=QR Code Reader Service
+After=network.target
+
+[Service]
+Type=simple
+User=camenjiv
+WorkingDirectory=/home/camenjiv/Desktop/qr_for_vending
+ExecStart=/usr/bin/python /home/camenjiv/Desktop/qr_for_vending/automa_raspi/qrcode_reader_raspi.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target 
