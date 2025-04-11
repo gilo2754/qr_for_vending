@@ -64,7 +64,7 @@ class QRReader:
                 logging.info(f"Valor anterior: {old_value}, Nuevo valor: {new_value}")
 
                 result = self.exchange_qr(qr_code)
-                logging.info(f"QR {qr_code} actualizado a {QRStates.USED} y valor a 0")
+                logging.info(f"QR {qr_code} actualizado a {QRStates.USED.value} y valor a 0")
                 return True
             else:
                 if new_value < self.min_value:
