@@ -65,16 +65,22 @@ async function loadQRCodes() {
         const apiUrl = window.location.origin;
         
         // Cargar los códigos QR con paginación
-        const response = await fetch(`${apiUrl}/api/qrcodes?limit=${window.itemsPerPage}&offset=${(window.currentPage - 1) * window.itemsPerPage}`, {
+        const response = await fetch(`${apiUrl}/api/qrdata?limit=${window.itemsPerPage}&offset=${(window.currentPage - 1) * window.itemsPerPage}`, {
             headers: {
                 'Authorization': `Bearer ${getAuthToken()}`
             }
         });
+
         if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/login.html';
+                return;
+            }
             throw new Error(`Error al cargar los códigos QR: ${response.status}`);
         }
+
         const data = await response.json();
-        const qrCodes = data.qrcodes || [];
+        const qrCodes = Array.isArray(data) ? data : [];
 
         // Actualizar contadores usando la función de utilidad
         const stats = countQRStats(qrCodes);
@@ -94,16 +100,20 @@ async function loadQRCodes() {
         // Mostrar la lista de códigos QR usando el componente
         if (qrCodes.length > 0) {
             qrCodes.forEach(qr => {
-                const qrCard = QRCardComponent.createCard({
-                    qrcode_id: qr.qrcode_id,
-                    new_value: qr.new_value,
-                    old_value: qr.old_value,
-                    state: qr.state,
-                    creation_date: qr.creation_date,
-                    used_date: qr.used_date,
-                    qr_image: qr.qr_image
-                });
-                qrListElement.appendChild(qrCard);
+                try {
+                    const qrCard = QRCardComponent.createCard({
+                        qrcode_id: qr.qrcode_id,
+                        new_value: qr.new_value,
+                        old_value: qr.old_value || 0,
+                        state: qr.state,
+                        creation_date: new Date(qr.creation_date).toLocaleDateString(),
+                        used_date: qr.used_date ? new Date(qr.used_date).toLocaleDateString() : null,
+                        qr_image: qr.qr_image
+                    });
+                    qrListElement.appendChild(qrCard);
+                } catch (error) {
+                    console.error('Error al crear la tarjeta QR:', error);
+                }
             });
         } else {
             qrListElement.innerHTML = '<p class="no-results">No se encontraron códigos QR.</p>';
