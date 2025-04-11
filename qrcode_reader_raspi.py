@@ -39,28 +39,37 @@ class QRReader:
         self.server_available = False
         self.last_server_check = 0
         self.server_check_interval = 10  # segundos entre chequeos
+        self.reconnection_attempt = 0
 
     def check_server_status(self):
         """Verifica si el servidor está en funcionamiento"""
         current_time = time.time()
-        if current_time - self.last_server_check < self.server_check_interval:
-            return self.server_available
+        time_since_last_check = current_time - self.last_server_check
+        
+        # Mostrar cuenta regresiva si el servidor no está disponible
+        if not self.server_available and time_since_last_check < self.server_check_interval:
+            seconds_remaining = int(self.server_check_interval - time_since_last_check)
+            print(f"\rPróximo intento de conexión en {seconds_remaining} segundos... (Intento #{self.reconnection_attempt})", end='')
+            return False
 
         self.last_server_check = current_time
         try:
+            print("\r", end='')  # Limpiar la línea de la cuenta regresiva
             response = self.session.get(f"{self.api_url}/", timeout=5)
             response.raise_for_status()
             if not self.server_available:
                 logging.info("✅ Conexión recuperada con el servidor")
+                self.reconnection_attempt = 0
             self.server_available = True
             return True
         except requests.exceptions.RequestException as e:
+            self.reconnection_attempt += 1
             if self.server_available:  # Solo logear cuando cambia el estado
                 logging.error("="*50)
                 logging.error("❌ SERVIDOR NO DISPONIBLE")
                 logging.error(f"Error: {str(e)}")
                 logging.error("Los QRs podrán leerse pero no procesarse")
-                logging.error("Intentando reconexión cada 10 segundos...")
+                logging.error(f"Intentando reconexión cada {self.server_check_interval} segundos...")
                 logging.error("="*50)
             self.server_available = False
             return False
@@ -134,15 +143,10 @@ def leer_qr_desde_lector_usb():
     # Crear instancia del lector QR
     reader = QRReader(Config.API_URL, Config.QR_MIN_VALUE)
 
-    # Verificación inicial del servidor
-    if not reader.check_server_status():
-        logging.warning("Iniciando sin conexión al servidor")
-        logging.warning("Se podrán leer QRs pero no procesarlos hasta recuperar la conexión")
-
     while True:
         try:
             # Verificar periódicamente el estado del servidor
-            reader.check_server_status()  # Solo verifica, no bloquea
+            reader.check_server_status()  # Ahora incluye la cuenta regresiva
 
             # Leer la línea completa enviada por el lector USB
             datos = input()
@@ -151,6 +155,7 @@ def leer_qr_desde_lector_usb():
             if not datos:
                 continue
 
+            print("\r", end='')  # Limpiar la línea de la cuenta regresiva
             logging.info(f"📱 QR leído: {datos}")
 
             if reader.process_qr(datos):
@@ -162,11 +167,13 @@ def leer_qr_desde_lector_usb():
                     logging.warning("⚠️ QR no procesado - Verificar estado y valor")
 
         except KeyboardInterrupt:
+            print("\r", end='')  # Limpiar la línea de la cuenta regresiva
             logging.info("="*50)
             logging.info("🛑 Programa terminado por el usuario")
             logging.info("="*50)
             break
         except Exception as e:
+            print("\r", end='')  # Limpiar la línea de la cuenta regresiva
             handle_qr_error(e, datos if 'datos' in locals() else 'unknown')
             time.sleep(1)
 
