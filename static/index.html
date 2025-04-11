@@ -142,17 +142,11 @@
     </div>
 
     <script>
-        // Verificar si la biblioteca qrcodejs está cargada
-        console.log('QRCode disponible:', typeof QRCode !== 'undefined');
-        
-        // Obtener la URL de la API del entorno
-        const API_URL = window.location.origin;
-       
-       // Cargar los códigos QR al cargar la página
+        // Verificar autenticación y cargar datos al iniciar la página
         document.addEventListener('DOMContentLoaded', () => {
             checkAuth();
+            loadQRCodes(); // Cargar los códigos QR al inicio
         });
-
     </script>
 </body>
 </html>
