@@ -3,7 +3,6 @@ import requests
 import time
 import os
 from dotenv import load_dotenv
-import RPi.GPIO as GPIO
 
 # Cargar variables de entorno desde .env
 load_dotenv()
@@ -12,32 +11,6 @@ class Config:
     """Configuración del lector QR"""
     API_URL = os.getenv('API_URL', 'http://localhost:3000')
     QR_MIN_VALUE = float(os.getenv('QR_MIN_VALUE', '0.05'))
-    LED_PIN = 18  # Pin GPIO para el LED externo
-    PULSE_DURATION = 0.2  # Duración de cada pulso en segundos
-    PULSE_INTERVAL = 0.3  # Intervalo entre pulsos en segundos
-
-def setup_led():
-    """Configura el pin del LED"""
-    try:
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(Config.LED_PIN, GPIO.OUT)
-        GPIO.output(Config.LED_PIN, GPIO.LOW)
-        print(f"LED configurado en el pin GPIO {Config.LED_PIN}")
-    except Exception as e:
-        print(f"Error al configurar el LED: {e}")
-        print("Asegúrate de ejecutar el script con privilegios de superusuario (sudo)")
-        sys.exit(1)
-
-def pulse_led(times):
-    """Genera pulsos visuales en el LED"""
-    try:
-        for _ in range(times):
-            GPIO.output(Config.LED_PIN, GPIO.HIGH)
-            time.sleep(Config.PULSE_DURATION)
-            GPIO.output(Config.LED_PIN, GPIO.LOW)
-            time.sleep(Config.PULSE_INTERVAL)
-    except Exception as e:
-        print(f"Error al generar pulsos en el LED: {e}")
 
 def leer_qr_desde_lector_usb():
     """Lee códigos QR desde un lector USB, procesa la información y actualiza la base de datos."""
@@ -45,9 +18,6 @@ def leer_qr_desde_lector_usb():
     print(f"Esperando la lectura de códigos QR desde el lector USB...")
     print(f"API URL: {Config.API_URL}")
     print(f"Valor mínimo QR: {Config.QR_MIN_VALUE}")
-
-    # Configurar el LED
-    setup_led()
 
     while True:
         try:
@@ -72,11 +42,8 @@ def leer_qr_desde_lector_usb():
                 # Usar new_value para determinar los pulsos
                 if new_value >= Config.QR_MIN_VALUE and estado_qr == 'valido':
                     pulsos = int(new_value / Config.QR_MIN_VALUE)
-                    print(f"Generando {pulsos} pulsos para el QR {datos}")
+                    print(f"Se generarían {pulsos} pulsos para el QR {datos}")
                     print(f"Valor anterior: {old_value}, Nuevo valor: {new_value}")
-
-                    # Generar pulsos visuales en el LED
-                    pulse_led(pulsos)
 
                     # Actualizar el estado y el valor del QR
                     url_exchange_qr = f"{Config.API_URL}/api/qrdata/exchange/{datos}"
@@ -85,9 +52,9 @@ def leer_qr_desde_lector_usb():
                     print(f"QR {datos} actualizado a 'usado' y valor a 0")
                 else:
                     if new_value < Config.QR_MIN_VALUE:
-                        print(f"El valor del QR {datos} es menor a {Config.QR_MIN_VALUE}. No se generan pulsos.")
+                        print(f"El valor del QR {datos} es menor a {Config.QR_MIN_VALUE}. No se generarían pulsos.")
                     elif estado_qr != 'valido':
-                        print(f"El estado del QR {datos} no es 'valido'. No se generan pulsos.")
+                        print(f"El estado del QR {datos} no es 'valido'. No se generarían pulsos.")
                     else:
                         print(f"El QR {datos} no cumple con los requisitos para generar pulsos.")
 
@@ -96,7 +63,6 @@ def leer_qr_desde_lector_usb():
 
         except KeyboardInterrupt:
             print("Programa terminado por el usuario.")
-            GPIO.cleanup()  # Limpiar configuración GPIO al salir
             break
         except Exception as e:
             print(f"Error al leer desde el lector USB: {e}")
