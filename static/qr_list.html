@@ -25,6 +25,13 @@
                 </div>
                 <div class="stat-item">
                     <div>
+                        <span class="stat-label">En Circulación:</span>
+                        <span class="stat-value" id="in-circulation-count">0</span>
+                    </div>
+                    <button class="delete-btn" onclick="deleteQRCodesByState('en_circulacion')">Borrar</button>
+                </div>
+                <div class="stat-item">
+                    <div>
                         <span class="stat-label">Usados:</span>
                         <span class="stat-value" id="used-count">0</span>
                     </div>
@@ -170,6 +177,7 @@
                 
                 // Actualizar estadísticas
                 document.getElementById('valid-count').textContent = data.stats.valid || 0;
+                document.getElementById('in-circulation-count').textContent = data.stats.in_circulation || 0;
                 document.getElementById('used-count').textContent = data.stats.used || 0;
                 document.getElementById('expired-count').textContent = data.stats.expired || 0;
                 document.getElementById('invalidated-count').textContent = data.stats.invalidated || 0;

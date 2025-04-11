@@ -84,43 +84,8 @@
     <div id="list" class="tab-content">
         <div class="container">
             <h1>Lista de Códigos QR</h1>
-            <button onclick="loadQRCodes()" class="refresh-button">Actualizar Lista</button>
-            
-            <div class="qr-stats">
-                <h3>Estadísticas de Códigos QR</h3>
-                <div class="stats-container">
-                    <div class="stat-item">
-                        <span class="stat-label">Válidos:</span>
-                        <span class="stat-value" id="valid-count">0</span>
-                    </div>
-                    <button class="delete-btn" onclick="deleteQRCodesByState('valido')">Borrar</button>
-
-                    <div class="stat-item">
-                        <span class="stat-label">En Circulación:</span>
-                        <span class="stat-value" id="in-circulation-count">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Usados:</span>
-                        <span class="stat-value" id="used-count">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Expirados:</span>
-                        <span class="stat-value" id="expired-count">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Invalidados:</span>
-                        <span class="stat-value" id="invalidated-count">0</span>
-                    </div>
-                    <div class="stat-item stat-total">
-                        <span class="stat-label">Total:</span>
-                        <span class="stat-value" id="total-count">0</span>
-                    </div>
-                </div>
-            </div>
-
-            <div id="loading">Cargando códigos QR...</div>
-            <div id="error" class="error-message"></div>
-            <div id="qrList" class="qr-grid"></div>
+            <p>Para ver la lista completa de códigos QR y gestionarlos, haz clic en el siguiente enlace:</p>
+            <a href="/static/qr_list.html" class="btn">Ver Lista de Códigos QR</a>
         </div>
     </div>
 
@@ -153,7 +118,7 @@
             
             // Si se selecciona la pestaña de lista, cargar los códigos QR
             if (tabName === 'list') {
-                loadQRCodes();
+                // Ya no cargamos los QRs aquí, se hace en qr_list.html
             }
         }
 
@@ -428,7 +393,6 @@
         // Cargar los códigos QR al cargar la página
         document.addEventListener('DOMContentLoaded', () => {
             checkAuth();
-            loadQRCodes();
         });
 
         // Función para descargar todos los QR generados
