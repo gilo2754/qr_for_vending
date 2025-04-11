@@ -108,16 +108,14 @@ async function handleRegister(event) {
     event.preventDefault();
     
     const username = document.getElementById('regUsername').value;
+    const email = document.getElementById('regEmail').value;
     const password = document.getElementById('regPassword').value;
     const fullName = document.getElementById('regFullName').value;
     const role = document.getElementById('regRole').value;
-    const errorMessage = document.getElementById('registerError');
-    const successMessage = document.getElementById('registerSuccess');
-
-    // Ocultar mensajes anteriores
-    errorMessage.style.display = 'none';
-    successMessage.style.display = 'none';
-
+    
+    const errorElement = document.getElementById('registerError');
+    const successElement = document.getElementById('registerSuccess');
+    
     try {
         const response = await fetch(`${API_URL}/api/register`, {
             method: 'POST',
@@ -125,30 +123,37 @@ async function handleRegister(event) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                username: username,
-                password: password,
+                username,
+                email,
+                password,
                 full_name: fullName,
-                role: role
+                role
             })
         });
-
-        if (response.ok) {
-            successMessage.textContent = 'Registro exitoso. Ahora puedes iniciar sesión.';
-            successMessage.style.display = 'block';
-            document.getElementById('registerForm').reset();
-            
-            // Cambiar al formulario de login después de 2 segundos
-            setTimeout(() => {
-                toggleForms();
-            }, 2000);
-        } else {
-            const data = await response.json();
-            errorMessage.textContent = data.detail || 'Error en el registro. Por favor, intente nuevamente.';
-            errorMessage.style.display = 'block';
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.detail || 'Error en el registro');
         }
+        
+        // Mostrar mensaje de éxito
+        successElement.textContent = 'Registro exitoso. Por favor, inicia sesión.';
+        successElement.style.display = 'block';
+        errorElement.style.display = 'none';
+        
+        // Limpiar el formulario
+        document.getElementById('registerForm').reset();
+        
+        // Cambiar al formulario de login después de 2 segundos
+        setTimeout(() => {
+            toggleForms();
+        }, 2000);
+        
     } catch (error) {
-        errorMessage.textContent = 'Error de conexión. Por favor, intente nuevamente.';
-        errorMessage.style.display = 'block';
+        errorElement.textContent = error.message;
+        errorElement.style.display = 'block';
+        successElement.style.display = 'none';
     }
 }
 
