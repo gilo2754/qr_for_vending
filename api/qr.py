@@ -68,8 +68,9 @@ class QRCode(QRCodeBase):
 
 def generate_qrcode_id(length: int = int(os.getenv("QR_SHORT_ID_LENGTH", "8"))) -> str:
     """Generate a unique QR code ID."""
-    characters = string.ascii_letters + string.digits
-    return ''.join(random.choice(characters) for _ in range(length))
+    # Excluir las letras Y y Z (mayúsculas y minúsculas) para evitar problemas de layout de teclado
+    characters = string.ascii_letters.replace('y', '').replace('z', '').replace('Y', '').replace('Z', '') + string.digits
+    return ''.join(random.choices(characters, k=length))
 
 @router.post("/qrdata", response_model=QRCode)
 async def create_qr_data(
