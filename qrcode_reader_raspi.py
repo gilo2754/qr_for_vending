@@ -34,22 +34,42 @@ class QRReader:
     def __init__(self, api_url, min_value):
         self.api_url = api_url
         self.min_value = min_value
-        self.session = requests.Session()  # Reutilizar la sesión HTTP
+        self.session = requests.Session()
+        self.server_available = False
+        self.last_server_check = 0
+        self.server_check_interval = 10  # segundos entre chequeos
 
     def check_server_status(self):
         """Verifica si el servidor está en funcionamiento"""
+        current_time = time.time()
+        
+        # Solo verificar si han pasado server_check_interval segundos
+        if current_time - self.last_server_check < self.server_check_interval:
+            return self.server_available
+
+        self.last_server_check = current_time
         try:
-            response = self.session.get(f"{self.api_url}/")
+            response = self.session.get(f"{self.api_url}/", timeout=5)
             response.raise_for_status()
-            logging.info(f"Conexión exitosa al servidor: {self.api_url}")
+            if not self.server_available:  # Solo logear si el estado cambió
+                logging.info(f"Conexión recuperada con el servidor: {self.api_url}")
+            self.server_available = True
             return True
-        except requests.exceptions.ConnectionError:
-            logging.error(f"No se puede conectar al servidor: {self.api_url}")
-            return False
         except requests.exceptions.RequestException as e:
-            logging.error(f"Error al verificar el servidor: {str(e)}")
+            if self.server_available:  # Solo logear si el estado cambió
+                logging.error(f"Se perdió la conexión con el servidor: {str(e)}")
+            self.server_available = False
             return False
 
+    def wait_for_server(self):
+        """Espera hasta que el servidor esté disponible"""
+        retry_count = 0
+        while not self.check_server_status():
+            retry_count += 1
+            if retry_count == 1:  # Solo mostrar en el primer intento
+                logging.warning("Esperando conexión con el servidor...")
+            time.sleep(5)  # Esperar 5 segundos entre intentos
+            
     def get_qr_info(self, qr_code):
         url = f"{self.api_url}/api/qrdata/{qr_code}?fields=new_value,old_value,state"
         response = self.session.get(url)
@@ -66,6 +86,11 @@ class QRReader:
         return int(value / self.min_value)
 
     def process_qr(self, qr_code):
+        # Verificar estado del servidor antes de procesar
+        if not self.server_available and not self.check_server_status():
+            logging.error("No se puede procesar el QR: Servidor no disponible")
+            return False
+
         try:
             info = self.get_qr_info(qr_code)
             new_value = info.get('new_value', 0)
@@ -104,23 +129,30 @@ def handle_qr_error(e, qr_code):
 def leer_qr_desde_lector_usb():
     """Lee códigos QR desde un lector USB, procesa la información y actualiza la base de datos."""
     
-    logging.info(f"Esperando la lectura de códigos QR desde el lector USB...")
+    logging.info(f"Iniciando lector QR...")
     logging.info(f"API URL: {Config.API_URL}")
     logging.info(f"Valor mínimo QR: {Config.QR_MIN_VALUE}")
 
     # Crear instancia del lector QR
     reader = QRReader(Config.API_URL, Config.QR_MIN_VALUE)
 
-    # Verificar conexión con el servidor
-    if not reader.check_server_status():
-        logging.error("No se pudo establecer conexión con el servidor. Verifique la configuración.")
-        return
+    # Verificación inicial del servidor
+    reader.wait_for_server()
 
     while True:
         try:
-            # Leer la línea completa enviada por el lector USB (terminada con Enter)
+            # Verificar periódicamente el estado del servidor
+            if not reader.check_server_status():
+                logging.warning("Servidor no disponible - Esperando reconexión...")
+                reader.wait_for_server()
+                continue
+
+            # Leer la línea completa enviada por el lector USB
             datos = input()
-            datos = datos.strip()  # Eliminar espacios en blanco al principio y al final
+            datos = datos.strip()
+
+            if not datos:
+                continue
 
             logging.info(f"Código QR leído: {datos}")
 
@@ -133,7 +165,7 @@ def leer_qr_desde_lector_usb():
             logging.info("Programa terminado por el usuario.")
             break
         except Exception as e:
-            handle_qr_error(e, datos)
+            handle_qr_error(e, datos if 'datos' in locals() else 'unknown')
             time.sleep(1)
 
 if __name__ == "__main__":
