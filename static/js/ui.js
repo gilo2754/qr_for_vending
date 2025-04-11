@@ -1,10 +1,4 @@
-// Constantes
-const API_URL = window.location.origin;
-
-/**
- * Función para cambiar entre pestañas
- * @param {string} tabName - Nombre de la pestaña a mostrar
- */
+// Función para cambiar entre pestañas
 function openTab(tabName) {
     // Ocultar todos los contenidos de pestañas
     const tabContents = document.getElementsByClassName('tab-content');
@@ -33,11 +27,7 @@ function openTab(tabName) {
     }
 }
 
-/**
- * Función para generar códigos QR
- * Esta función obtiene los datos del formulario, envía una solicitud a la API
- * para crear un nuevo código QR, y luego genera y muestra el código QR.
- */
+// Función para generar códigos QR
 async function generarQR() {
     // Obtener datos del formulario
     const valor = document.getElementById("valor").value;
@@ -66,7 +56,7 @@ async function generarQR() {
 
         try {
             // Paso 1: Crear el registro en la base de datos sin imagen
-            const createResponse = await fetch(`${API_URL}/api/qrdata`, {
+            const createResponse = await fetch(`${window.location.origin}/api/qrdata`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -128,7 +118,7 @@ async function generarQR() {
             const qrImageBase64 = canvas.toDataURL("image/png");
 
             // Paso 5: Actualizar el registro con la imagen correcta
-            const updateResponse = await fetch(`${API_URL}/api/qrdata/${qrcode_id}`, {
+            const updateResponse = await fetch(`${window.location.origin}/api/qrdata/${qrcode_id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -186,24 +176,20 @@ async function generarQR() {
             estadoElement.textContent = `Estado: ${data.state}`;
             qrContainer.appendChild(estadoElement);
         } catch (error) {
-            console.error('Error en el proceso de generación del QR:', error);
+            console.error('Error:', error);
             alert('Error al generar el código QR: ' + error.message);
         }
     }
 }
 
-/**
- * Función para obtener información de un código QR
- * Esta función obtiene el ID del código QR del input, envía una solicitud a la API
- * para obtener la información del código QR, y luego muestra la información.
- */
+// Función para obtener información de un código QR
 async function obtenerInformacion() {
     // Obtener el ID del código QR del input
     const qrcode_id = document.getElementById('qrcode_id').value;
     
     try {
         // Enviar solicitud a la API para obtener la información del código QR
-        const response = await fetch(`${API_URL}/api/qrdata/${qrcode_id}`, {
+        const response = await fetch(`${window.location.origin}/api/qrdata/${qrcode_id}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${getAuthToken()}`
