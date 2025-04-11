@@ -15,16 +15,26 @@ class QRCardComponent {
             cardContent += `<img src="${imageSrc}" alt="QR Code #${qrcode_id}" class="qr-image">`;
         }
 
-        // Formatear la fecha de uso con hora si existe
-        const formattedUsedDate = used_date ? new Date(used_date).toLocaleString('es-ES', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-        }) : null;
+        // Función auxiliar para formatear fechas
+        const formatDate = (dateString) => {
+            if (!dateString) return null;
+            const date = new Date(dateString);
+            // Verificar si la fecha es válida
+            if (isNaN(date.getTime())) return dateString;
+            return date.toLocaleString('es-ES', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+        };
+
+        // Formatear ambas fechas
+        const formattedCreationDate = formatDate(creation_date);
+        const formattedUsedDate = formatDate(used_date);
 
         // Agregar la información del QR
         cardContent += `
@@ -33,7 +43,7 @@ class QRCardComponent {
                 <p><strong>Valor Nuevo:</strong> $${new_value}</p>
                 ${old_value > 0 ? `<p><strong>Valor Anterior:</strong> $${old_value}</p>` : ''}
                 <p><strong>Estado:</strong> <span class="state-badge state-${state}">${state}</span></p>
-                <p><strong>Fecha de creación:</strong> ${creation_date}</p>
+                <p><strong>Fecha de creación:</strong> ${formattedCreationDate}</p>
                 ${formattedUsedDate ? `<p><strong>Fecha de uso:</strong> ${formattedUsedDate}</p>` : ''}
             </div>
         `;
