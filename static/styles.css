@@ -291,3 +291,93 @@ body {
     grid-column: 1 / -1;
 }
 
+/* Estilos para login y registro */
+.login-container, .register-container {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+.login-container h1, .register-container h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 2rem;
+}
+
+.login-container .form-group, .register-container .form-group {
+    margin-bottom: 1rem;
+}
+
+.login-container label, .register-container label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #666;
+}
+
+.login-container input, .register-container input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.login-container button, .register-container button {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.login-container button:hover, .register-container button:hover {
+    background-color: #0056b3;
+}
+
+.login-container .error-message, .register-container .error-message {
+    color: #dc3545;
+    margin-top: 1rem;
+    text-align: center;
+    display: none;
+}
+
+.login-container .success-message, .register-container .success-message {
+    color: #28a745;
+    margin-top: 1rem;
+    text-align: center;
+    display: none;
+}
+
+.login-container .toggle-form, .register-container .toggle-form {
+    text-align: center;
+    margin-top: 1rem;
+    color: #007bff;
+    cursor: pointer;
+}
+
+.login-container .toggle-form:hover, .register-container .toggle-form:hover {
+    text-decoration: underline;
+}
+
+/* Media queries */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .two-column-layout {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-container {
+        grid-template-columns: 1fr;
+    }
+}
+
