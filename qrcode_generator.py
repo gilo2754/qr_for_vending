@@ -463,6 +463,61 @@ async def register_user(user_data: UserRegister):
         if db:
             db.close()
 
+@app.delete("/api/qrdata/state/{state}")
+async def delete_qr_by_state(
+    state: str,
+    current_user: dict = Depends(check_admin_role)  # Solo administradores pueden borrar QR
+):
+    """Delete QR codes by state."""
+    if not current_user or current_user.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo los administradores pueden borrar códigos QR"
+        )
+
+    db = None
+    cursor = None
+    try:
+        # Obtener conexión a la base de datos
+        db = mysql.connector.connect(**Config.DB_CONFIG)
+        cursor = db.cursor()
+
+        # Verificar si hay códigos QR con el estado especificado
+        cursor.execute('SELECT COUNT(*) FROM qr_codes WHERE state = %s', (state,))
+        count = cursor.fetchone()[0]
+        
+        if count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No se encontraron códigos QR con estado '{state}'"
+            )
+
+        # Borrar los códigos QR con el estado especificado
+        cursor.execute('DELETE FROM qr_codes WHERE state = %s', (state,))
+        db.commit()
+        
+        return {
+            "status": "success",
+            "message": f"Se borraron {count} códigos QR con estado '{state}'"
+        }
+    except mysql.connector.Error as err:
+        logging.error(f"Database error: {err}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error en la base de datos"
+        )
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error inesperado al borrar los códigos QR"
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
