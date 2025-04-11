@@ -199,7 +199,7 @@ function descargarTodos() {
 
 // Inicializar variables de paginación
 window.currentPage = 1;
-window.itemsPerPage = 50;
+window.itemsPerPage = 200;
 window.totalItems = 0;
 window.totalPages = 1;
 
