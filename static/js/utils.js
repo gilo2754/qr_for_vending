@@ -65,7 +65,7 @@ async function loadQRCodes() {
         const apiUrl = window.location.origin;
         
         // Cargar los códigos QR con paginación
-        const response = await fetch(`${apiUrl}/api/qrcodes?limit=${window.itemsPerPage}&offset=${(window.currentPage - 1) * window.itemsPerPage}`, {
+        const response = await fetch(`${apiUrl}/api/qrcodes?skip=${(window.currentPage - 1) * window.itemsPerPage}&limit=${window.itemsPerPage}`, {
             headers: {
                 'Authorization': `Bearer ${getAuthToken()}`
             }
@@ -199,7 +199,7 @@ function descargarTodos() {
 
 // Inicializar variables de paginación
 window.currentPage = 1;
-window.itemsPerPage = 100;
+window.itemsPerPage = 50;
 window.totalItems = 0;
 window.totalPages = 1;
 
