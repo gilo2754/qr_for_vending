@@ -36,6 +36,20 @@ class QRReader:
         self.min_value = min_value
         self.session = requests.Session()  # Reutilizar la sesión HTTP
 
+    def check_server_status(self):
+        """Verifica si el servidor está en funcionamiento"""
+        try:
+            response = self.session.get(f"{self.api_url}/")
+            response.raise_for_status()
+            logging.info(f"Conexión exitosa al servidor: {self.api_url}")
+            return True
+        except requests.exceptions.ConnectionError:
+            logging.error(f"No se puede conectar al servidor: {self.api_url}")
+            return False
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error al verificar el servidor: {str(e)}")
+            return False
+
     def get_qr_info(self, qr_code):
         url = f"{self.api_url}/api/qrdata/{qr_code}?fields=new_value,old_value,state"
         response = self.session.get(url)
@@ -70,7 +84,7 @@ class QRReader:
                 if new_value < self.min_value:
                     logging.warning(f"El valor del QR {qr_code} es menor a {self.min_value}. No se generarían pulsos.")
                 elif estado_qr != QRStates.VALID:
-                    logging.warning(f"El estado del QR {qr_code} no es {QRStates.VALID}. No se generarían pulsos.")
+                    logging.warning(f"El estado del QR {qr_code} no es {QRStates.VALID.value}. No se generarían pulsos.")
                 return False
 
         except requests.exceptions.RequestException as e:
@@ -96,6 +110,11 @@ def leer_qr_desde_lector_usb():
 
     # Crear instancia del lector QR
     reader = QRReader(Config.API_URL, Config.QR_MIN_VALUE)
+
+    # Verificar conexión con el servidor
+    if not reader.check_server_status():
+        logging.error("No se pudo establecer conexión con el servidor. Verifique la configuración.")
+        return
 
     while True:
         try:
