@@ -38,8 +38,22 @@ class QRReader:
         self.session = requests.Session()
         self.server_available = False
         self.last_server_check = 0
-        self.server_check_interval = 10  # segundos entre chequeos
+        self.server_check_interval = 10
         self.reconnection_attempt = 0
+        self.internet_check_urls = [
+            "http://8.8.8.8",      # Google DNS
+            "http://1.1.1.1"       # Cloudflare DNS
+        ]
+
+    def check_internet_connection(self):
+        """Verifica si hay conexión a internet"""
+        for url in self.internet_check_urls:
+            try:
+                requests.get(url, timeout=3)
+                return True
+            except requests.RequestException:
+                continue
+        return False
 
     def check_server_status(self):
         """Verifica si el servidor está en funcionamiento"""
@@ -53,6 +67,20 @@ class QRReader:
             return False
 
         self.last_server_check = current_time
+        
+        # Primero verificar conexión a internet
+        if not self.check_internet_connection():
+            self.reconnection_attempt += 1
+            if self.server_available:
+                logging.error("="*50)
+                logging.error("❌ SIN CONEXIÓN A INTERNET")
+                logging.error("Verifique la conexión de red de la Raspberry Pi")
+                logging.error(f"Intentando reconexión cada {self.server_check_interval} segundos...")
+                logging.error("="*50)
+            self.server_available = False
+            return False
+
+        # Si hay internet, verificar el servidor
         try:
             print("\r", end='')  # Limpiar la línea de la cuenta regresiva
             response = self.session.get(f"{self.api_url}/", timeout=5)
@@ -62,13 +90,32 @@ class QRReader:
                 self.reconnection_attempt = 0
             self.server_available = True
             return True
+        except requests.exceptions.ConnectionError:
+            self.reconnection_attempt += 1
+            if self.server_available:
+                logging.error("="*50)
+                logging.error("❌ SERVIDOR CAÍDO O INACCESIBLE")
+                logging.error("Hay conexión a internet pero el servidor no responde")
+                logging.error(f"Intentando reconexión cada {self.server_check_interval} segundos...")
+                logging.error("="*50)
+            self.server_available = False
+            return False
+        except requests.exceptions.Timeout:
+            self.reconnection_attempt += 1
+            if self.server_available:
+                logging.error("="*50)
+                logging.error("⏰ TIEMPO DE ESPERA AGOTADO")
+                logging.error("El servidor está tardando demasiado en responder")
+                logging.error(f"Intentando reconexión cada {self.server_check_interval} segundos...")
+                logging.error("="*50)
+            self.server_available = False
+            return False
         except requests.exceptions.RequestException as e:
             self.reconnection_attempt += 1
-            if self.server_available:  # Solo logear cuando cambia el estado
+            if self.server_available:
                 logging.error("="*50)
-                logging.error("❌ SERVIDOR NO DISPONIBLE")
+                logging.error("❌ ERROR DE CONEXIÓN")
                 logging.error(f"Error: {str(e)}")
-                logging.error("Los QRs podrán leerse pero no procesarse")
                 logging.error(f"Intentando reconexión cada {self.server_check_interval} segundos...")
                 logging.error("="*50)
             self.server_available = False
